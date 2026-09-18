@@ -5,7 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Conversation } from './conversation';
 
-export interface HealthStatus {
-  status: string;
+export interface MessagesResponse {
+  conversations: Conversation[];
 }

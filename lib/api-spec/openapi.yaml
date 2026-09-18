@@ -10,6 +10,16 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: feed
+    description: Personalized feed and post actions
+  - name: discover
+    description: People, communities, and topics
+  - name: posts
+    description: Post creation and interactions
+  - name: messages
+    description: Private messaging
+  - name: profiles
+    description: Profile and notification data
 paths:
   /healthz:
     get:
@@ -24,6 +34,177 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /feed:
+    get:
+      operationId: getFeed
+      tags: [feed]
+      summary: Get the personalized feed
+      parameters:
+        - in: query
+          name: viewerId
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Feed posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedResponse"
+  /discover:
+    get:
+      operationId: getDiscover
+      tags: [discover]
+      summary: Search and browse discovery content
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Discovery results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoverResponse"
+  /communities/{communityId}:
+    get:
+      operationId: getCommunity
+      tags: [discover]
+      summary: Get a community page
+      parameters:
+        - in: path
+          name: communityId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Community detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityDetail"
+        "404":
+          description: Community not found
+  /posts:
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a text, image, or video post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+  /posts/{postId}/like:
+    post:
+      operationId: togglePostLike
+      tags: [posts]
+      summary: Like or unlike a post
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LikeRequest"
+      responses:
+        "200":
+          description: Updated like state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+  /messages:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get message conversations
+      parameters:
+        - in: query
+          name: viewerId
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagesResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a private message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /profiles/{profileId}:
+    get:
+      operationId: getProfile
+      tags: [profiles]
+      summary: Get a user profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /profiles/{profileId}/notifications:
+    get:
+      operationId: getNotifications
+      tags: [profiles]
+      summary: Get profile notifications
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationsResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +214,163 @@ components:
           type: string
       required:
         - status
+    Community:
+      type: object
+      required: [id, name, slug, color, memberCount, description]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        color: { type: string }
+        memberCount: { type: integer }
+        description: { type: string }
+    Author:
+      type: object
+      required: [id, displayName, username, avatar, communityName, communityColor, isLive]
+      properties:
+        id: { type: integer }
+        displayName: { type: string }
+        username: { type: string }
+        avatar: { type: string }
+        communityName: { type: string }
+        communityColor: { type: string }
+        isLive: { type: boolean }
+        isPremium: { type: boolean }
+    Post:
+      type: object
+      required: [id, author, type, text, caption, mediaUrl, createdAt, likes, comments, shares, likedByViewer]
+      properties:
+        id: { type: integer }
+        author: { $ref: "#/components/schemas/Author" }
+        type:
+          type: string
+          enum: [text, image, video]
+        text: { type: string }
+        caption: { type: string }
+        mediaUrl: { type: string }
+        link: { type: string, nullable: true }
+        createdAt: { type: string }
+        likes: { type: integer }
+        comments: { type: integer }
+        shares: { type: integer }
+        likedByViewer: { type: boolean }
+    FeedResponse:
+      type: object
+      required: [posts, viewer]
+      properties:
+        posts:
+          type: array
+          items: { $ref: "#/components/schemas/Post" }
+        viewer: { $ref: "#/components/schemas/Author" }
+    DiscoverResponse:
+      type: object
+      required: [communities, people, topics]
+      properties:
+        communities:
+          type: array
+          items: { $ref: "#/components/schemas/Community" }
+        people:
+          type: array
+          items: { $ref: "#/components/schemas/Author" }
+        topics:
+          type: array
+          items: { type: string }
+    CommunityDetail:
+      type: object
+      required: [community, members, posts]
+      properties:
+        community: { $ref: "#/components/schemas/Community" }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/Author" }
+        posts:
+          type: array
+          items: { $ref: "#/components/schemas/Post" }
+    CreatePostRequest:
+      type: object
+      required: [authorId, type]
+      properties:
+        authorId: { type: integer }
+        type:
+          type: string
+          enum: [text, image, video]
+        text: { type: string }
+        caption: { type: string }
+        mediaUrl: { type: string }
+        link: { type: string }
+    LikeRequest:
+      type: object
+      required: [viewerId]
+      properties:
+        viewerId: { type: integer }
+    LikeResponse:
+      type: object
+      required: [liked, likes]
+      properties:
+        liked: { type: boolean }
+        likes: { type: integer }
+    Message:
+      type: object
+      required: [id, senderId, recipientId, body, createdAt, status]
+      properties:
+        id: { type: integer }
+        senderId: { type: integer }
+        recipientId: { type: integer }
+        body: { type: string }
+        createdAt: { type: string }
+        status:
+          type: string
+          enum: [sent, delivered, read]
+    Conversation:
+      type: object
+      required: [id, person, lastMessage, unreadCount, updatedAt]
+      properties:
+        id: { type: integer }
+        person: { $ref: "#/components/schemas/Author" }
+        lastMessage: { type: string }
+        unreadCount: { type: integer }
+        updatedAt: { type: string }
+    MessagesResponse:
+      type: object
+      required: [conversations]
+      properties:
+        conversations:
+          type: array
+          items: { $ref: "#/components/schemas/Conversation" }
+    SendMessageRequest:
+      type: object
+      required: [senderId, recipientId, body]
+      properties:
+        senderId: { type: integer }
+        recipientId: { type: integer }
+        body: { type: string }
+    Profile:
+      type: object
+      required: [user, followerCount, followingCount, posts]
+      properties:
+        user: { $ref: "#/components/schemas/Author" }
+        followerCount: { type: integer }
+        followingCount: { type: integer }
+        posts:
+          type: array
+          items: { $ref: "#/components/schemas/Post" }
+    AppNotification:
+      type: object
+      required: [id, kind, title, detail, createdAt, read]
+      properties:
+        id: { type: integer }
+        kind:
+          type: string
+          enum: [like, comment, follow, live, message, community]
+        title: { type: string }
+        detail: { type: string }
+        createdAt: { type: string }
+        read: { type: boolean }
+    NotificationsResponse:
+      type: object
+      required: [notifications]
+      properties:
+        notifications:
+          type: array
+          items: { $ref: "#/components/schemas/AppNotification" }
 

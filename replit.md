@@ -1,6 +1,6 @@
-# [Project name]
+# Animus
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Animus is a community-centered native mobile app for sharing thoughts, images, clips, and private conversations across community boundaries.
 
 ## Run & Operate
 
@@ -22,11 +22,19 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/animus` — Expo / React Native mobile application
+- `artifacts/api-server` — Express API and SQL-backed server routes
+- `lib/db/src/schema/index.ts` — PostgreSQL schema source of truth
+- `lib/api-spec/openapi.yaml` — API contract source of truth
+- `artifacts/animus/constants/colors.ts` — mobile semantic color tokens
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Follow Apple Human Interface Guidelines for navigation, spacing, hierarchy, accessibility, and system-color behavior.
+- Use Iconoir as the primary icon family for custom in-app controls; use Apple system symbols only where native platform tab affordances require them.
+- Treat multi-step user actions as database transactions so partial likes, messages, notifications, or seed records cannot be committed.
+- Keep community identity visible in public experiences while keeping private messaging and calling focused on the participants.
+- Keep premium functionality represented as coming soon until its implementation is explicitly scoped.
 
 ## Product
 
@@ -34,7 +42,7 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- The user wants Animus to follow Apple HIG and use Iconoir icons.
 
 ## Gotchas
 

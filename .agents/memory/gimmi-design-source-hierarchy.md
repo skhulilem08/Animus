@@ -7,4 +7,4 @@ For Gimmi, treat the attached multi-screen PNG as the strict visual source for s
 
 **Why:** The product is inspired by a fictional app that has no reliable public UI specification. The user supplied the PNG specifically to define the visuals and repeatedly rejected invented web-style or alternative compositions.
 
-**How to apply:** Build native-first with Iconoir controls, Apple system typography on iOS, and Plus Jakarta Sans on Android. Use native Liquid Glass for the Home header on supported iOS versions, with a solid readable fallback elsewhere; keep other bars classic unless the user explicitly extends glass to them. Resolve visual ambiguity in favor of the PNG and behavioral ambiguity in favor of the MD.
+**How to apply:** Build native-first with Iconoir controls, Apple system typography on iOS, and Plus Jakarta Sans on Android. Use native Liquid Glass for the Home header and icon-only bottom tabs on supported iOS versions. Keep the bottom bar fixed; its clear glass indicator spring-slides on tab taps and is not draggable. Use translucent blur fallbacks elsewhere. Resolve visual ambiguity in favor of the PNG and behavioral ambiguity in favor of the MD.

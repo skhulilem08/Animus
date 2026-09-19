@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "expo-blur": "~57.0.3",
     "expo-glass-effect": "~57.0.3",
     "iconoir-react-native": "^7.12.1"
   }

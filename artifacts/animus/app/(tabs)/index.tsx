@@ -8,6 +8,7 @@ import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
@@ -50,18 +51,13 @@ export default function HomeFeed() {
     const headerStyle = [
       styles.header,
       { top: insets.top },
-      !hasLiquidGlass && {
-        backgroundColor: colors.background,
-        borderBottomColor: colors.border,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-      },
     ];
 
     if (hasLiquidGlass) {
       return (
         <GlassView
           glassEffectStyle="regular"
-          tintColor={colors.background}
+          tintColor={`${colors.primary}18`}
           colorScheme="light"
           isInteractive={false}
           style={headerStyle}
@@ -71,7 +67,22 @@ export default function HomeFeed() {
       );
     }
 
-    return <View style={headerStyle}><HeaderContent /></View>;
+    return (
+      <BlurView
+        intensity={82}
+        tint="light"
+        style={[
+          headerStyle,
+          {
+            backgroundColor: 'rgba(255,255,255,0.42)',
+            borderBottomColor: colors.border,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+          },
+        ]}
+      >
+        <HeaderContent />
+      </BlurView>
+    );
   };
 
   const ClipsRail = () => {

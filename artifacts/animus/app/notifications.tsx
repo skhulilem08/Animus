@@ -46,7 +46,7 @@ export default function Notifications() {
         renderItem={({ item }) => (
           <View style={styles.notifRow}>
             <View style={[styles.iconBox, { backgroundColor: colors.secondary }]}>
-              <Icon name={item.kind === 'like' ? 'heart' : item.kind === 'message' ? 'message-circle' : item.kind === 'follow' ? 'user-plus' : 'bell'} size={24} color={colors.foreground} />
+              <Icon name={item.kind === 'like' ? 'heart' : item.kind === 'message' ? 'message-circle' : item.kind === 'follow' ? 'user-plus' : 'bell'} size={24} color={item.kind === 'like' ? colors.like : colors.foreground} />
             </View>
             <View style={styles.notifText}>
               <Text style={[styles.notifTitle, { color: colors.foreground }]}><Text style={{ fontWeight: '700' }}>{item.title}</Text> {item.detail}</Text>

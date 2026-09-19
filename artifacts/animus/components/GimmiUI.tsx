@@ -334,8 +334,8 @@ export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; 
       
       <View style={styles.postActions}>
         <Pressable accessibilityRole="button" accessibilityLabel={post.likedByViewer ? 'Unlike post' : 'Like post'} onPress={onLike} style={({ pressed }) => [styles.action, { opacity: pressed ? 0.55 : 1 }]} hitSlop={8}>
-          <Icon name={post.likedByViewer ? 'heart-solid' : 'heart'} size={20} color={post.likedByViewer ? colors.destructive : colors.foreground} />
-          <Text style={[styles.actionText, { color: post.likedByViewer ? colors.destructive : colors.mutedForeground }]}>{post.likes}</Text>
+          <Icon name={post.likedByViewer ? 'heart-solid' : 'heart'} size={20} color={post.likedByViewer ? colors.like : colors.foreground} />
+          <Text style={[styles.actionText, { color: post.likedByViewer ? colors.like : colors.mutedForeground }]}>{post.likes}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Comment on post" onPress={onComment} style={({ pressed }) => [styles.action, { opacity: pressed ? 0.55 : 1 }]} hitSlop={8}>
           <Icon name="message-circle" size={20} color={colors.foreground} />

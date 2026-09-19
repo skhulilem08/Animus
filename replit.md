@@ -4,12 +4,15 @@ Animus is a community-centered native mobile app for sharing thoughts, images, c
 
 ## Run & Operate
 
+- Replit managed workflows:
+  - `artifacts/animus: expo` — Expo mobile preview
+  - `artifacts/api-server: API Server` — Express API
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — provided automatically by Replit's built-in PostgreSQL database
 
 ## Stack
 

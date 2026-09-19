@@ -209,7 +209,7 @@ export function Button({ label, onPress, variant = 'primary', style, shape = 'sq
   );
 }
 
-export function Avatar({ author, size = 44 }: { author?: Author | null; size?: number }) {
+export function Avatar({ author, size = 44, showLive = false }: { author?: Author | null; size?: number; showLive?: boolean }) {
   const colors = useColors();
   const hasUploadedAvatar = Boolean(
     author?.avatar && /^https?:\/\//i.test(author.avatar),
@@ -222,7 +222,7 @@ export function Avatar({ author, size = 44 }: { author?: Author | null; size?: n
         style={{ width: size, height: size, borderRadius: size / 2 }}
         resizeMode="cover"
       />
-      {author?.isLive ? <View style={[styles.liveDot, { backgroundColor: colors.destructive, borderColor: colors.card }]} /> : null}
+      {showLive && author?.isLive ? <View style={[styles.liveDot, { backgroundColor: colors.destructive, borderColor: colors.card }]} /> : null}
     </View>
   );
 }
@@ -314,10 +314,6 @@ export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () 
           {post.text ? <Pressable onPress={onComment}><Text style={[styles.postText, { color: colors.foreground }]} selectable>{post.text}</Text></Pressable> : null}
           <Pressable accessibilityRole="button" accessibilityLabel="Open post comments" onPress={onComment} style={[styles.mediaFrame, { backgroundColor: colors.muted }]}>
             <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="contain" style={styles.media} />
-            <View style={[styles.mediaType, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Icon name={post.type === 'video' ? 'play' : 'image'} size={13} color="#fff" />
-              <Text style={[styles.mediaTypeText, { color: '#fff' }]}>{post.type === 'video' ? 'Clip' : 'Image'}</Text>
-            </View>
           </Pressable>
           {post.caption ? <Pressable onPress={onComment}><Text style={[styles.caption, { color: colors.foreground }]} selectable>{post.caption}</Text></Pressable> : null}
         </>
@@ -415,8 +411,6 @@ const styles = StyleSheet.create({
   caption: { fontSize: 15, lineHeight: 20, letterSpacing: -0.24, marginBottom: 12 },
   mediaFrame: { width: '100%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   media: { width: '100%', height: '100%' },
-  mediaType: { position: 'absolute', top: 12, right: 12, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  mediaTypeText: { fontSize: 12, fontWeight: '600' },
   postActions: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 40 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 44, height: 40 },
   actionText: { fontSize: 14, fontWeight: '500' },

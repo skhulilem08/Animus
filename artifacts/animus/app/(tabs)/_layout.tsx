@@ -19,7 +19,6 @@ export default function TabLayout() {
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.border,
           elevation: 0,
-          shadowOpacity: 0,
           ...(isWeb ? { height: 56, paddingBottom: 2 } : {}),
         },
         tabBarLabelStyle: {
@@ -27,12 +26,6 @@ export default function TabLayout() {
           lineHeight: 12,
           fontWeight: '500',
           marginTop: -2,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 1,
         },
         tabBarHideOnKeyboard: true,
       }}

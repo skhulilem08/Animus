@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Text } from '@/components/GimmiUI';
-import { useGetFeed, useTogglePostLike, useGetDiscover } from '@workspace/api-client-react';
-import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Avatar, Icon } from '@/components/GimmiUI';
+import { useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
+import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Icon } from '@/components/GimmiUI';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,6 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
-  const { data: discoverData } = useGetDiscover();
   const toggleLike = useTogglePostLike();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -43,31 +42,40 @@ export default function HomeFeed() {
     </View>
   );
 
-  const Stories = () => {
-    const people = discoverData?.people?.slice(0, 5) || [];
+  const ClipsRail = () => {
+    const clips = (data?.posts || []).filter((post) => post.type === 'video').slice(0, 10);
+    if (clips.length === 0) return null;
+
     return (
-      <View style={[styles.storiesContainer, { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Create your story" style={styles.storyItem} onPress={() => router.push('/create')}>
-            <View style={[styles.storyRing, { borderColor: colors.border }]}>
-              <View style={[styles.addStory, { backgroundColor: colors.secondary }]}>
-                <Icon name="plus" size={20} color={colors.primary} />
+      <View style={[styles.clipsSection, { borderBottomColor: colors.border }]}>
+        <View style={styles.clipsHeading}>
+          <Text style={[styles.clipsTitle, { color: colors.foreground }]}>Clips</Text>
+          <Text style={[styles.clipsHint, { color: colors.mutedForeground }]}>Swipe to browse</Text>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.clipsContent}>
+          {clips.map((clip) => (
+            <Pressable
+              key={clip.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Open clip by ${clip.author.displayName}`}
+              style={({ pressed }) => [styles.clipCard, { backgroundColor: '#1C1C1E', opacity: pressed ? 0.72 : 1 }]}
+              onPress={() => router.push({ pathname: '/clips', params: { initialId: String(clip.id) } })}
+            >
+              <View style={styles.clipPlay}>
+                <Icon name="play" size={22} color="#FFFFFF" />
               </View>
-            </View>
-            <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>Your story</Text>
-          </Pressable>
-          {people.map(person => (
-            <Pressable key={person.id} accessibilityRole="button" accessibilityLabel={`${person.displayName}${person.isLive ? ', live now' : ''}`} style={styles.storyItem}>
-              <View style={[styles.storyRing, { borderColor: person.isLive ? colors.destructive : colors.border }]}>
-                <Avatar author={person} size={46} />
+              <View style={styles.clipMeta}>
+                <Text style={styles.clipAuthor} numberOfLines={1}>{clip.author.displayName}</Text>
+                <Text style={styles.clipCommunity} numberOfLines={1}>{clip.author.communityName}</Text>
               </View>
-              <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>{person.displayName.split(' ')[0]}</Text>
             </Pressable>
           ))}
         </ScrollView>
       </View>
     );
   };
+
+  const regularPosts = (data?.posts || []).filter((post) => post.type !== 'video');
 
   if (isLoading) return <Screen><Header /><LoadingState label="Loading your feed" /></Screen>;
   if (isError) return <Screen><Header /><ErrorState onRetry={refetch} /></Screen>;
@@ -77,9 +85,9 @@ export default function HomeFeed() {
       <View style={{ height: insets.top, backgroundColor: colors.background }} />
       <Header />
       <FlatList
-        data={data?.posts || []}
+        data={regularPosts}
         keyExtractor={(item) => String(item.id)}
-        ListHeaderComponent={<Stories />}
+        ListHeaderComponent={<ClipsRail />}
         renderItem={({ item }) => (
           <PostCard
             post={item}
@@ -97,14 +105,18 @@ export default function HomeFeed() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, height: 44 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, height: 44 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: -0.4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 0 },
-  storiesContainer: { paddingVertical: 10 },
-  storiesContent: { paddingHorizontal: 12, gap: 10 },
-  storyItem: { alignItems: 'center', gap: 4, width: 54 },
-  addStory: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  storyRing: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  storyName: { fontSize: 10, lineHeight: 13, fontWeight: '500' }
+  clipsSection: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  clipsHeading: { paddingHorizontal: 12, marginBottom: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  clipsTitle: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  clipsHint: { fontSize: 12, lineHeight: 16 },
+  clipsContent: { paddingHorizontal: 12, gap: 8 },
+  clipCard: { width: 104, height: 148, borderRadius: 10, overflow: 'hidden', justifyContent: 'space-between', padding: 10 },
+  clipPlay: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: 28 },
+  clipMeta: { gap: 1 },
+  clipAuthor: { color: '#FFFFFF', fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  clipCommunity: { color: '#C7C7CC', fontSize: 10, lineHeight: 13 },
 });

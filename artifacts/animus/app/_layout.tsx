@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -39,6 +39,7 @@ function RootLayoutNav() {
       <Stack.Screen name="community/[id]" options={{ presentation: 'modal' }} />
       <Stack.Screen name="post/[id]" />
       <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="clips" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="conversation/[id]" />
       <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
       <Stack.Screen name="about" options={{ presentation: 'modal' }} />
@@ -70,6 +71,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" translucent={false} hidden={false} />
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>

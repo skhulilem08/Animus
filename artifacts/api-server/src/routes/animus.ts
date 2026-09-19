@@ -139,18 +139,24 @@ const postSelect = (viewerId: number) => sql`
 `;
 
 router.get("/feed", async (req, res) => {
-  const viewerId = numberParam(req.query.viewerId, 1);
+  const requestedViewerId = numberParam(req.query.viewerId, 0);
   try {
-    const [postResult, viewerResult] = await Promise.all([
-      db.execute(sql`${postSelect(viewerId)} ORDER BY p.created_at DESC LIMIT 20`),
-      db.execute(sql`
-        SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
-               c.name AS community_name, c.color AS community_color
-        FROM users u JOIN communities c ON c.id = u.community_id
-        WHERE u.id = ${viewerId}
-      `),
-    ]);
+    const viewerResult = await db.execute(sql`
+      SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
+             c.name AS community_name, c.color AS community_color
+      FROM users u JOIN communities c ON c.id = u.community_id
+      ORDER BY
+        CASE
+          WHEN u.id = ${requestedViewerId} THEN 0
+          WHEN c.slug = 'ladybug' THEN 1
+          ELSE 2
+        END,
+        u.id
+      LIMIT 1
+    `);
     const viewerRow = (viewerResult.rows as Row[])[0];
+    const viewerId = asNumber(viewerRow?.id);
+    const postResult = await db.execute(sql`${postSelect(viewerId)} ORDER BY p.created_at DESC LIMIT 20`);
     const data = GetFeedResponse.parse({
       posts: (postResult.rows as Row[]).map((row) => toPost(row, viewerId)),
       viewer: toAuthor(viewerRow ?? {}),

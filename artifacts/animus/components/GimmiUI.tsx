@@ -1,5 +1,5 @@
 import React, { ReactNode, useState } from 'react';
-import { ActivityIndicator, Image, ImageSourcePropType, Linking, Pressable, ScrollView, Share, StyleSheet, Text as RNText, TextInput, View, Platform, StyleProp, ViewStyle, TextProps } from 'react-native';
+import { ActivityIndicator, Image, ImageSourcePropType, Pressable, ScrollView, Share, StyleSheet, Text as RNText, TextInput, View, Platform, StyleProp, ViewStyle, TextProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
@@ -39,6 +39,7 @@ import {
 import { Post, Author, Community } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { getCommunityTheme } from '@/constants/communityThemes';
+import { openInAppBrowser } from '@/utils/openInAppBrowser';
 
 const blueMedia = require('../assets/images/feed-blue.png') as ImageSourcePropType;
 const saffronMedia = require('../assets/images/feed-saffron.png') as ImageSourcePropType;
@@ -245,7 +246,7 @@ export function SearchField({ value, onChangeText, placeholder = 'Search Gimmi' 
 
 const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () => void; onComment?: () => void }) {
+export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; onLike?: () => void; onComment?: () => void; onOpenClip?: () => void }) {
   const colors = useColors();
   const theme = getCommunityTheme({ name: post.author.communityName, slug: '', color: post.author.communityColor });
   const [saved, setSaved] = useState(false);
@@ -258,9 +259,7 @@ export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () 
 
   const validLink = extractedLink && /^https?:\/\/[^\s]+$/i.test(extractedLink) ? extractedLink : null;
   const openLink = async () => {
-    if (validLink && await Linking.canOpenURL(validLink)) {
-      await Linking.openURL(validLink);
-    }
+    if (validLink) await openInAppBrowser(validLink);
   };
   const sharePost = () => Share.share({
     message: [post.text || post.caption, validLink].filter(Boolean).join('\n'),
@@ -312,8 +311,19 @@ export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () 
       ) : (
         <>
           {post.text ? <Pressable onPress={onComment}><Text style={[styles.postText, { color: colors.foreground }]} selectable>{post.text}</Text></Pressable> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel="Open post comments" onPress={onComment} style={[styles.mediaFrame, { backgroundColor: colors.muted }]}>
-            <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="contain" style={styles.media} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={post.type === 'video' ? 'Open full-screen clip' : 'Open post comments'}
+            onPress={post.type === 'video' ? onOpenClip : onComment}
+            style={[styles.mediaFrame, post.type === 'video' ? styles.clipFeedFrame : null, { backgroundColor: colors.muted }]}
+          >
+            {post.type === 'video' && !post.mediaUrl ? (
+              <View style={styles.clipPlaceholder}>
+                <Icon name="play" size={30} color="#FFFFFF" />
+              </View>
+            ) : (
+              <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="contain" style={styles.media} />
+            )}
           </Pressable>
           {post.caption ? <Pressable onPress={onComment}><Text style={[styles.caption, { color: colors.foreground }]} selectable>{post.caption}</Text></Pressable> : null}
         </>
@@ -410,7 +420,9 @@ const styles = StyleSheet.create({
   linkButtonText: { fontSize: 15, fontWeight: '600' },
   caption: { fontSize: 15, lineHeight: 20, letterSpacing: -0.24, marginBottom: 12 },
   mediaFrame: { width: '100%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  clipFeedFrame: { aspectRatio: 4 / 3 },
   media: { width: '100%', height: '100%' },
+  clipPlaceholder: { width: '100%', height: '100%', backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center' },
   postActions: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 40 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 44, height: 40 },
   actionText: { fontSize: 14, fontWeight: '500' },

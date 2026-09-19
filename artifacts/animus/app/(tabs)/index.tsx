@@ -24,8 +24,9 @@ export default function HomeFeed() {
   }, [refetch]);
 
   const handleLike = (postId: number) => {
+    if (!data?.viewer.id) return;
     toggleLike.mutate(
-      { postId, data: { viewerId: 1 } },
+      { postId, data: { viewerId: data.viewer.id } },
       { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/feed'] }) },
     );
   };
@@ -44,7 +45,12 @@ export default function HomeFeed() {
   );
 
   const ClipsRail = () => {
-    const clips = (data?.posts || []).filter((post) => post.type === 'video').slice(0, 10);
+    const clips = (data?.posts || [])
+      .filter((post) => (
+        post.type === 'video'
+        && post.author.communityName === data?.viewer.communityName
+      ))
+      .slice(0, 10);
     if (clips.length === 0) return null;
 
     return (
@@ -114,7 +120,7 @@ export default function HomeFeed() {
     );
   };
 
-  const regularPosts = (data?.posts || []).filter((post) => post.type !== 'video');
+  const feedPosts = data?.posts || [];
 
   if (isLoading) return <Screen><Header /><LoadingState label="Loading your feed" /></Screen>;
   if (isError) return <Screen><Header /><ErrorState onRetry={refetch} /></Screen>;
@@ -124,7 +130,7 @@ export default function HomeFeed() {
       <View style={{ height: insets.top, backgroundColor: colors.background }} />
       <Header />
       <FlatList
-        data={regularPosts}
+        data={feedPosts}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={<><Stories /><ClipsRail /></>}
         renderItem={({ item }) => (
@@ -132,6 +138,7 @@ export default function HomeFeed() {
             post={item}
             onLike={() => handleLike(item.id)}
             onComment={() => router.push(`/post/${item.id}`)}
+            onOpenClip={() => router.push({ pathname: '/clips', params: { initialId: String(item.id) } })}
           />
         )}
         contentContainerStyle={{ paddingBottom: 16 }}

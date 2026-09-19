@@ -96,6 +96,18 @@ export async function seedGimmi() {
   `);
   await tx.execute(sql`
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
+    SELECT u.id, 'video', '',
+      'A quick moment from the Ladybug Community.', '', NULL, 196, 21, 9
+    FROM users u
+    WHERE u.username = 'maya.c'
+      AND NOT EXISTS (
+        SELECT 1 FROM posts
+        WHERE author_id = u.id
+          AND type = 'video'
+      )
+  `);
+  await tx.execute(sql`
+    INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
     SELECT u.id, seed.type, seed.text, seed.caption, seed.media_url, seed.link, seed.likes, seed.comments, seed.shares
     FROM (VALUES
       ('theo.p', 'image', '', 'A little more color for the week ahead.', 'https://images.local/animus-feed-saffron.png', NULL, 642, 46, 24),

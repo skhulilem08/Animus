@@ -1,9 +1,10 @@
 import React from 'react';
-import { Linking, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/GimmiUI';
 import { Screen, Header, IconButton } from '@/components/GimmiUI';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { openInAppBrowser } from '@/utils/openInAppBrowser';
 
 export default function AboutPage() {
   const colors = useColors();
@@ -28,7 +29,7 @@ export default function AboutPage() {
         </Text>
         <Text
           accessibilityRole="link"
-          onPress={() => Linking.openURL('https://icons8.com/icons/set/account-male--style-fluency--author-tulpahn')}
+          onPress={() => openInAppBrowser('https://icons8.com/icons/set/account-male--style-fluency--author-tulpahn')}
           style={[styles.credit, { color: colors.primary }]}
         >
           Default profile icon by Icons8

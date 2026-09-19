@@ -27,6 +27,7 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
   const barWidth = width - outerInset * 2;
   const itemWidth = barWidth / state.routes.length;
   const translateX = useRef(new Animated.Value(state.index * itemWidth)).current;
+  const liquidProgress = useRef(new Animated.Value(0)).current;
   const dragStart = useRef(state.index * itemWidth);
 
   useEffect(() => {
@@ -48,6 +49,12 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
       translateX.stopAnimation((value) => {
         dragStart.current = value;
       });
+      liquidProgress.stopAnimation();
+      Animated.timing(liquidProgress, {
+        toValue: 1,
+        duration: 110,
+        useNativeDriver: false,
+      }).start();
     },
     onPanResponderMove: (_, gesture) => {
       const maximum = itemWidth * (state.routes.length - 1);
@@ -70,6 +77,14 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
         mass: 0.72,
         useNativeDriver: false,
       }).start();
+      Animated.sequence([
+        Animated.delay(220),
+        Animated.timing(liquidProgress, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: false,
+        }),
+      ]).start();
 
       if (targetIndex !== state.index) {
         const event = navigation.emit({
@@ -88,8 +103,16 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
         mass: 0.72,
         useNativeDriver: false,
       }).start();
+      Animated.sequence([
+        Animated.delay(220),
+        Animated.timing(liquidProgress, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: false,
+        }),
+      ]).start();
     },
-  }), [itemWidth, navigation, state.index, state.routes, translateX]);
+  }), [itemWidth, liquidProgress, navigation, state.index, state.routes, translateX]);
 
   return (
     <View
@@ -111,16 +134,53 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
             styles.selectionPill,
             {
               width: itemWidth - 8,
-              transform: [{ translateX }],
+              transform: [
+                { translateX },
+                {
+                  scaleX: liquidProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.08],
+                  }),
+                },
+                {
+                  scaleY: liquidProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 0.96],
+                  }),
+                },
+              ],
             },
           ]}
         >
-          <BlurView
-            intensity={100}
-            tint="light"
-            style={[StyleSheet.absoluteFill, styles.selectionGlass]}
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              styles.selectionResting,
+              {
+                backgroundColor: `${colors.primary}3D`,
+                borderColor: `${colors.primary}66`,
+                opacity: liquidProgress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 0],
+                }),
+              },
+            ]}
           />
-          <View style={styles.selectionHighlight} />
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                opacity: liquidProgress,
+              },
+            ]}
+          >
+            <BlurView
+              intensity={100}
+              tint="light"
+              style={[StyleSheet.absoluteFill, styles.selectionGlass]}
+            />
+            <View style={styles.selectionHighlight} />
+          </Animated.View>
         </Animated.View>
         {state.routes.map((route, index) => {
           const selected = state.index === index;
@@ -286,9 +346,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 1,
   },
+  selectionResting: {
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   selectionGlass: {
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   selectionHighlight: {
     position: 'absolute',

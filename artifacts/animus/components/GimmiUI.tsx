@@ -36,6 +36,7 @@ import {
   MicrophoneMute,
   Spark,
 } from 'iconoir-react-native';
+import { Bookmark as BookmarkSolid } from 'iconoir-react-native/solid';
 import { Post, Author, Community } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { getCommunityTheme } from '@/constants/communityThemes';
@@ -50,6 +51,7 @@ const iconMap = {
   'arrow-left': NavArrowLeft,
   bell: Bell,
   bookmark: Bookmark,
+  'bookmark-solid': BookmarkSolid,
   compass: Compass,
   'cloud-off': CloudXmark,
   'pen-tool': EditPencil,
@@ -344,7 +346,7 @@ export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; 
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable accessibilityRole="button" accessibilityLabel={saved ? 'Remove saved post' : 'Save post'} accessibilityState={{ selected: saved }} onPress={() => setSaved((value) => !value)} style={styles.iconTouchTarget}>
-          <Icon name="bookmark" size={20} color={saved ? colors.primary : colors.foreground} />
+          <Icon name={saved ? 'bookmark-solid' : 'bookmark'} size={20} color={saved ? colors.primary : colors.foreground} />
         </Pressable>
       </View>
     </View>

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
-import { Icon } from '@/components/AnimusUI';
+import { Icon } from '@/components/GimmiUI';
 import { reloadAppAsync } from 'expo';
 
 export type ErrorFallbackProps = {

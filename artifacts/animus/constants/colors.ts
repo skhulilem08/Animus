@@ -1,63 +1,50 @@
 /**
- * Semantic design tokens for the mobile app.
- *
- * These tokens mirror the naming conventions used in web artifacts (index.css)
- * so that multi-artifact projects share a cohesive visual identity.
- *
- * Replace the placeholder values below with values that match the project's
- * brand. If a sibling web artifact exists, read its index.css and convert the
- * HSL values to hex so both artifacts use the same palette.
- *
- * To add dark mode, add a `dark` key with the same token names.
- * The useColors() hook will automatically pick it up.
+ * Semantic design tokens for the Gimmi mobile app, targeting strict Apple HIG style.
  */
 
 const colors = {
   light: {
-    // iOS system-color semantics keep controls predictable; communities add
-    // their own primary/soft colors at the component level.
-    text: '#1C1C1E',
+    text: '#000000',
     tint: '#007AFF',
-    background: '#F2F2F7',
-    foreground: '#1C1C1E',
+    background: '#FFFFFF',
+    foreground: '#000000',
     card: '#FFFFFF',
-    cardForeground: '#1C1C1E',
+    cardForeground: '#000000',
     primary: '#007AFF',
     primaryForeground: '#FFFFFF',
-    secondary: '#E5E5EA',
-    secondaryForeground: '#1C1C1E',
-    muted: '#E5E5EA',
-    mutedForeground: '#6C6C70',
-    accent: '#D1D1D6',
-    accentForeground: '#1C1C1E',
+    secondary: '#F2F2F7',
+    secondaryForeground: '#000000',
+    muted: '#F2F2F7',
+    mutedForeground: '#8E8E93',
+    accent: '#007AFF',
+    accentForeground: '#FFFFFF',
     destructive: '#FF3B30',
     destructiveForeground: '#FFFFFF',
     border: '#C6C6C8',
-    input: '#D1D1D6',
+    input: '#F2F2F7',
+    groupedBackground: '#F2F2F7',
   },
   dark: {
-    text: '#F2F2F7',
+    text: '#FFFFFF',
     tint: '#0A84FF',
     background: '#000000',
-    foreground: '#F2F2F7',
+    foreground: '#FFFFFF',
     card: '#1C1C1E',
-    cardForeground: '#F2F2F7',
+    cardForeground: '#FFFFFF',
     primary: '#0A84FF',
     primaryForeground: '#FFFFFF',
-    secondary: '#2C2C2E',
-    secondaryForeground: '#F2F2F7',
-    muted: '#2C2C2E',
+    secondary: '#1C1C1E',
+    secondaryForeground: '#FFFFFF',
+    muted: '#1C1C1E',
     mutedForeground: '#98989D',
-    accent: '#48484A',
-    accentForeground: '#F2F2F7',
+    accent: '#0A84FF',
+    accentForeground: '#FFFFFF',
     destructive: '#FF453A',
     destructiveForeground: '#FFFFFF',
     border: '#38383A',
-    input: '#48484A',
+    input: '#1C1C1E',
+    groupedBackground: '#000000',
   },
-
-  // Border radius (in px). Sync from the sibling web artifact's --radius
-  // CSS variable. This value applies to cards, buttons, inputs, and modals.
   radius: 12,
 };
 

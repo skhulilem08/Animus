@@ -53,48 +53,43 @@ export interface Post {
   likedByViewer: boolean;
 }
 
-export interface FeedResponse {
-  posts: Post[];
-  viewer: Author;
-}
-
-export interface DiscoverResponse {
-  communities: Community[];
-  people: Author[];
-  topics: string[];
-}
-
-export interface CommunityDetail {
-  community: Community;
-  members: Author[];
-  posts: Post[];
-}
-
-export type CreatePostRequestType = typeof CreatePostRequestType[keyof typeof CreatePostRequestType];
-
-
-export const CreatePostRequestType = {
-  text: 'text',
-  image: 'image',
-  video: 'video',
-} as const;
-
-export interface CreatePostRequest {
-  authorId: number;
-  type: CreatePostRequestType;
-  text?: string;
-  caption?: string;
-  mediaUrl?: string;
-  link?: string;
-}
-
-export interface LikeRequest {
+export interface ViewerRequest {
+  /** @minimum 1 */
   viewerId: number;
 }
 
-export interface LikeResponse {
-  liked: boolean;
-  likes: number;
+export interface FollowResponse {
+  following: boolean;
+  followerCount: number;
+}
+
+export interface MembershipResponse {
+  joined: boolean;
+  memberCount: number;
+}
+
+export interface Comment {
+  id: number;
+  postId: number;
+  author: Author;
+  body: string;
+  createdAt: string;
+  parentCommentId: number | null;
+}
+
+export interface CommentsResponse {
+  comments: Comment[];
+}
+
+export interface CreateCommentRequest {
+  /** @minimum 1 */
+  authorId: number;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  body: string;
+  parentCommentId?: number | null;
 }
 
 export type MessageStatus = typeof MessageStatus[keyof typeof MessageStatus];
@@ -113,6 +108,57 @@ export interface Message {
   body: string;
   createdAt: string;
   status: MessageStatus;
+}
+
+export interface ConversationMessagesResponse {
+  messages: Message[];
+}
+
+export interface FeedResponse {
+  posts: Post[];
+  viewer: Author;
+}
+
+export interface DiscoverResponse {
+  communities: Community[];
+  people: Author[];
+  topics: string[];
+}
+
+export interface CommunityDetail {
+  community: Community;
+  joinedByViewer?: boolean;
+  members: Author[];
+  posts: Post[];
+}
+
+export type CreatePostRequestType = typeof CreatePostRequestType[keyof typeof CreatePostRequestType];
+
+
+export const CreatePostRequestType = {
+  text: 'text',
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface CreatePostRequest {
+  authorId: number;
+  type: CreatePostRequestType;
+  /** @maxLength 500 */
+  text?: string;
+  caption?: string;
+  mediaUrl?: string;
+  /** @pattern ^https?://[^\\s]+$ */
+  link?: string;
+}
+
+export interface LikeRequest {
+  viewerId: number;
+}
+
+export interface LikeResponse {
+  liked: boolean;
+  likes: number;
 }
 
 export interface Conversation {
@@ -165,6 +211,15 @@ export interface NotificationsResponse {
   notifications: AppNotification[];
 }
 
+export interface MarkNotificationsReadRequest {
+  /** @minimum 1 */
+  notificationId?: number;
+}
+
+export interface MarkNotificationsReadResponse {
+  updated: number;
+}
+
 export type GetFeedParams = {
 viewerId?: number;
 };
@@ -173,7 +228,19 @@ export type GetDiscoverParams = {
 query?: string;
 };
 
+export type GetCommunityParams = {
+viewerId?: number;
+};
+
+export type GetPostParams = {
+viewerId?: number;
+};
+
 export type GetMessagesParams = {
+viewerId?: number;
+};
+
+export type GetConversationMessagesParams = {
 viewerId?: number;
 };
 

@@ -1,30 +1,71 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { View, FlatList, StyleSheet, Pressable } from 'react-native';
+import { Text } from '@/components/GimmiUI';
 import { useGetNotifications } from '@workspace/api-client-react';
+import { Screen, Header, IconButton, LoadingState, ErrorState, EmptyState, Icon, relativeTime } from '@/components/GimmiUI';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { EmptyState, ErrorState, Header, Icon, IconName, LoadingState, Screen, relativeTime } from '@/components/AnimusUI';
 
-const iconFor = (kind: string): IconName => ({ like: 'heart', comment: 'message-circle', follow: 'user-plus', live: 'bell', message: 'message-circle', community: 'hash' }[kind] as IconName || 'bell');
-
-export default function NotificationsScreen() {
+export default function Notifications() {
+  const { data, isLoading, isError, refetch } = useGetNotifications(1);
   const colors = useColors();
-  const router = useRouter();
-  const notifications = useGetNotifications(1);
-  if (notifications.isLoading) return <Screen><LoadingState label="Gathering your signals" /></Screen>;
-  if (notifications.isError) return <Screen><ErrorState onRetry={() => notifications.refetch()} /></Screen>;
-  const items = notifications.data?.notifications ?? [];
-  const unread = items.filter((item) => !item.read);
-  const earlier = items.filter((item) => item.read);
-  const group = (title: string, values: typeof items) => values.length ? <View><Text style={[styles.groupLabel, { color: colors.mutedForeground }]}>{title}</Text>{values.map((item) => <Pressable key={item.id} onPress={() => item.kind === 'message' ? router.push('/messages') : undefined} style={[styles.item, { borderBottomColor: colors.border, backgroundColor: item.read ? 'transparent' : colors.secondary }]}><View style={[styles.icon, { backgroundColor: item.read ? colors.muted : colors.accent }]}><Icon name={iconFor(item.kind)} size={17} color={colors.foreground} /></View><View style={{ flex: 1 }}><Text style={[styles.title, { color: colors.foreground }]}>{item.title}</Text><Text style={[styles.detail, { color: colors.mutedForeground }]}>{item.detail}</Text></View><Text style={[styles.time, { color: colors.mutedForeground }]}>{relativeTime(item.createdAt)}</Text></Pressable>)}</View> : null;
-  return <Screen><Header title="Notifications" subtitle="A gentle pulse from your communities." right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} />{group('NEW', unread)}{group('EARLIER', earlier)}{!items.length ? <EmptyState icon="bell" title="All caught up" body="When something happens, you will see it here." /> : null}</Screen>;
+  const [filter, setFilter] = useState('All');
+
+  if (isLoading) return <Screen><Header left={<IconButton name="arrow-left" onPress={() => router.back()} />} title="Notifications" /><LoadingState /></Screen>;
+  if (isError) return <Screen><Header left={<IconButton name="arrow-left" onPress={() => router.back()} />} title="Notifications" /><ErrorState onRetry={refetch} /></Screen>;
+
+  const filters = ['All', 'Social', 'Community', 'Live', 'Messages'];
+
+  return (
+    <Screen scroll={false}>
+      <Header
+        left={<IconButton name="arrow-left" onPress={() => router.back()} />}
+        title="Notifications"
+      />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+        <FlatList
+          data={filters}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }}
+          renderItem={({ item }) => (
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: filter === item ? colors.primary : colors.secondary }]}
+              onPress={() => setFilter(item)}
+            >
+              <Text style={[styles.filterText, { color: filter === item ? colors.primaryForeground : colors.foreground }]}>{item}</Text>
+            </Pressable>
+          )}
+        />
+      </View>
+
+      <FlatList
+        data={data?.notifications || []}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+        renderItem={({ item }) => (
+          <View style={styles.notifRow}>
+            <View style={[styles.iconBox, { backgroundColor: colors.secondary }]}>
+              <Icon name={item.kind === 'like' ? 'heart' : item.kind === 'message' ? 'message-circle' : item.kind === 'follow' ? 'user-plus' : 'bell'} size={24} color={colors.foreground} />
+            </View>
+            <View style={styles.notifText}>
+              <Text style={[styles.notifTitle, { color: colors.foreground }]}><Text style={{ fontWeight: '700' }}>{item.title}</Text> {item.detail}</Text>
+              <Text style={[styles.notifTime, { color: colors.mutedForeground }]}>{relativeTime(item.createdAt)}</Text>
+            </View>
+          </View>
+        )}
+        ListEmptyComponent={<EmptyState icon="bell" title="All caught up" body="You don't have any notifications right now." />}
+      />
+    </Screen>
+  );
 }
 
 const styles = StyleSheet.create({
-  groupLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginTop: 4, marginBottom: 8 },
-  item: { minHeight: 70, borderBottomWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 9, borderRadius: 10 },
-  icon: { width: 36, height: 36, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  detail: { fontSize: 12, lineHeight: 17 },
-  time: { fontSize: 10, alignSelf: 'flex-start', paddingTop: 14 },
+  filterPill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  filterText: { fontSize: 14, fontWeight: '600' },
+  notifRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  iconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  notifText: { flex: 1, marginLeft: 16 },
+  notifTitle: { fontSize: 15, lineHeight: 20 },
+  notifTime: { fontSize: 13, marginTop: 4 },
 });

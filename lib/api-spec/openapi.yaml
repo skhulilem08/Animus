@@ -16,6 +16,8 @@ tags:
     description: People, communities, and topics
   - name: posts
     description: Post creation and interactions
+  - name: communities
+    description: Community membership
   - name: messages
     description: Private messaging
   - name: profiles
@@ -82,6 +84,10 @@ paths:
           required: true
           schema:
             type: integer
+        - in: query
+          name: viewerId
+          required: false
+          schema: { type: integer, default: 1 }
       responses:
         "200":
           description: Community detail
@@ -133,6 +139,105 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LikeResponse"
+  /posts/{postId}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get a post by ID
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: viewerId
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Post detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+        "404": { description: Post not found }
+  /posts/{postId}/comments:
+    get:
+      operationId: getPostComments
+      tags: [posts]
+      summary: Get persisted comments for a post
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Post comments
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentsResponse" }
+    post:
+      operationId: createPostComment
+      tags: [posts]
+      summary: Add a comment or reply to a post
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCommentRequest" }
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+  /profiles/{profileId}/follow:
+    post:
+      operationId: toggleFollow
+      tags: [profiles]
+      summary: Follow or unfollow a profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ViewerRequest" }
+      responses:
+        "200":
+          description: Updated follow state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowResponse" }
+  /communities/{communityId}/membership:
+    post:
+      operationId: toggleCommunityMembership
+      tags: [communities]
+      summary: Join or leave a community
+      parameters:
+        - in: path
+          name: communityId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ViewerRequest" }
+      responses:
+        "200":
+          description: Updated membership state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MembershipResponse" }
   /messages:
     get:
       operationId: getMessages
@@ -169,6 +274,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Message"
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: getConversationMessages
+      tags: [messages]
+      summary: Get persisted messages in a conversation
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: viewerId
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Conversation messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationMessagesResponse" }
   /profiles/{profileId}:
     get:
       operationId: getProfile
@@ -205,6 +330,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationsResponse"
+  /profiles/{profileId}/notifications/read:
+    post:
+      operationId: markNotificationsRead
+      tags: [profiles]
+      summary: Mark one or all notifications as read
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MarkNotificationsReadRequest" }
+      responses:
+        "200":
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarkNotificationsReadResponse" }
 components:
   schemas:
     HealthStatus:
@@ -254,6 +400,54 @@ components:
         comments: { type: integer }
         shares: { type: integer }
         likedByViewer: { type: boolean }
+    ViewerRequest:
+      type: object
+      required: [viewerId]
+      properties:
+        viewerId: { type: integer, minimum: 1 }
+    FollowResponse:
+      type: object
+      required: [following, followerCount]
+      properties:
+        following: { type: boolean }
+        followerCount: { type: integer }
+    MembershipResponse:
+      type: object
+      required: [joined, memberCount]
+      properties:
+        joined: { type: boolean }
+        memberCount: { type: integer }
+    Comment:
+      type: object
+      required: [id, postId, author, body, createdAt, parentCommentId]
+      properties:
+        id: { type: integer }
+        postId: { type: integer }
+        author: { $ref: "#/components/schemas/Author" }
+        body: { type: string }
+        createdAt: { type: string }
+        parentCommentId: { type: integer, nullable: true }
+    CommentsResponse:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items: { $ref: "#/components/schemas/Comment" }
+    CreateCommentRequest:
+      type: object
+      required: [authorId, body]
+      properties:
+        authorId: { type: integer, minimum: 1 }
+        body: { type: string, minLength: 1, maxLength: 1000 }
+        parentCommentId: { type: integer, nullable: true }
+    ConversationMessagesResponse:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/Message" }
     FeedResponse:
       type: object
       required: [posts, viewer]
@@ -280,6 +474,7 @@ components:
       required: [community, members, posts]
       properties:
         community: { $ref: "#/components/schemas/Community" }
+        joinedByViewer: { type: boolean }
         members:
           type: array
           items: { $ref: "#/components/schemas/Author" }
@@ -294,10 +489,12 @@ components:
         type:
           type: string
           enum: [text, image, video]
-        text: { type: string }
+        text: { type: string, maxLength: 500 }
         caption: { type: string }
         mediaUrl: { type: string }
-        link: { type: string }
+        link:
+          type: string
+          pattern: '^https?://[^\\s]+$'
     LikeRequest:
       type: object
       required: [viewerId]
@@ -373,4 +570,13 @@ components:
         notifications:
           type: array
           items: { $ref: "#/components/schemas/AppNotification" }
+    MarkNotificationsReadRequest:
+      type: object
+      properties:
+        notificationId: { type: integer, minimum: 1 }
+    MarkNotificationsReadResponse:
+      type: object
+      required: [updated]
+      properties:
+        updated: { type: integer }
 

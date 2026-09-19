@@ -1,48 +1,105 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQueryClient } from '@tanstack/react-query';
-import { getGetFeedQueryKey, useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
+import React, { useCallback, useState } from 'react';
+import { FlatList, RefreshControl, View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { Text } from '@/components/GimmiUI';
+import { useGetFeed, useTogglePostLike, useGetDiscover } from '@workspace/api-client-react';
+import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Avatar, Icon } from '@/components/GimmiUI';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
 
-export default function HomeScreen() {
+export default function HomeFeed() {
+  const { data, isLoading, isError, refetch } = useGetFeed();
+  const { data: discoverData } = useGetDiscover();
+  const toggleLike = useTogglePostLike();
   const colors = useColors();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const feed = useGetFeed({ viewerId: 1 });
-  const likeMutation = useTogglePostLike();
-  const posts = feed.data?.posts ?? [];
-  const viewer = feed.data?.viewer;
+  const [refreshing, setRefreshing] = useState(false);
 
-  const toggleLike = (postId: number) => {
-    likeMutation.mutate({ postId, data: { viewerId: 1 } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey({ viewerId: 1 }) }),
-    });
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  const handleLike = (postId: number) => {
+    toggleLike.mutate({ postId, data: { viewerId: 1 } });
   };
 
-  if (feed.isLoading) return <Screen><LoadingState label="Tuning your corner of Animus" /></Screen>;
-  if (feed.isError) return <Screen><ErrorState onRetry={() => feed.refetch()} /></Screen>;
+  const Header = () => (
+    <View style={[styles.header, { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+      <View style={styles.headerLeft}>
+        <View style={{ width: 28, height: 28, backgroundColor: colors.tint, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>G</Text>
+        </View>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Gimmi</Text>
+      </View>
+      <View style={styles.headerRight}>
+        <IconButton name="search" size={24} onPress={() => router.push('/discover')} />
+        <IconButton name="bell" size={24} badge={true} onPress={() => router.push('/notifications')} />
+      </View>
+    </View>
+  );
+
+  const Stories = () => {
+    const people = discoverData?.people?.slice(0, 5) || [];
+    return (
+      <View style={[styles.storiesContainer, { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
+          <View style={styles.storyItem}>
+            <View style={styles.storyRing}>
+              <View style={[styles.addStory, { backgroundColor: colors.secondary }]}>
+                <Icon name="plus" size={24} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>Your story</Text>
+          </View>
+          {people.map(person => (
+            <View key={person.id} style={styles.storyItem}>
+              <View style={[styles.storyRing, { borderColor: person.isLive ? colors.destructive : colors.border }]}>
+                <Avatar author={person} size={58} />
+              </View>
+              <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>{person.displayName.split(' ')[0]}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  if (isLoading) return <Screen><Header /><LoadingState label="Loading your feed" /></Screen>;
+  if (isError) return <Screen><Header /><ErrorState onRetry={refetch} /></Screen>;
 
   return (
-    <Screen>
-      <Header title="Good morning" subtitle="A slower, better kind of feed." right={<Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')}><View><Icon name="bell" size={22} color={colors.foreground} /><View style={[styles.notificationDot, { backgroundColor: colors.primary }]} /></View></Pressable>} />
-      <View style={[styles.introCard, { backgroundColor: colors.primary }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.introKicker, { color: colors.primaryForeground }]}>YOUR PEOPLE, TODAY</Text>
-          <Text style={[styles.introTitle, { color: colors.primaryForeground }]}>Make room for the good stuff.</Text>
-        </View>
-        <Avatar author={viewer} size={50} />
-      </View>
-      <SectionLabel action="Discover" onPress={() => router.push('/discover')}>For your attention</SectionLabel>
-      {posts.length ? posts.map((post) => <PostCard key={post.id} post={post} onLike={() => toggleLike(post.id)} onComment={() => router.push({ pathname: '/post/[id]', params: { id: String(post.id) } })} />) : <EmptyState icon="wind" title="Your feed is quiet" body="Follow a room or share something to start your rhythm." />}
+    <Screen scroll={false} style={{ paddingTop: 0 }} useSafeArea={false}>
+      <View style={{ height: 44 }} />
+      <Header />
+      <FlatList
+        data={data?.posts || []}
+        keyExtractor={(item) => String(item.id)}
+        ListHeaderComponent={<Stories />}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onLike={() => handleLike(item.id)}
+            onComment={() => router.push(`/post/${item.id}`)}
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: 112 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        ListEmptyComponent={<EmptyState icon="wind" title="It's quiet here" body="Follow people or join communities to see posts." action={() => router.push('/discover')} actionLabel="Discover People" />}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  notificationDot: { position: 'absolute', width: 7, height: 7, borderRadius: 4, top: -1, right: -3 },
-  introCard: { minHeight: 128, borderRadius: 22, padding: 17, flexDirection: 'row', alignItems: 'flex-end', marginBottom: 24 },
-  introKicker: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, marginBottom: 10 },
-  introTitle: { fontSize: 22, lineHeight: 27, fontWeight: '700', maxWidth: 230, letterSpacing: -0.5 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 44 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: -0.4 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 0 },
+  storiesContainer: { paddingVertical: 16 },
+  storiesContent: { paddingHorizontal: 16, gap: 16 },
+  storyItem: { alignItems: 'center', gap: 6, width: 68 },
+  addStory: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
+  storyRing: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
+  storyName: { fontSize: 13, fontWeight: '500' }
 });

@@ -1,40 +1,79 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '@/components/GimmiUI';
 import { useGetProfile } from '@workspace/api-client-react';
+import { Screen, Header, Avatar, LoadingState, ErrorState, PostCard, Button, IconButton, CommunityPill } from '@/components/GimmiUI';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
 
 export default function ProfileScreen() {
+  const { data, isLoading, isError, refetch } = useGetProfile(1);
   const colors = useColors();
-  const router = useRouter();
-  const profile = useGetProfile(1);
-  if (profile.isLoading) return <Screen><LoadingState label="Finding your profile" /></Screen>;
-  if (profile.isError) return <Screen><ErrorState onRetry={() => profile.refetch()} /></Screen>;
-  const data = profile.data;
-  if (!data) return <Screen><EmptyState title="No profile yet" body="Your Animus profile will appear here." /></Screen>;
+
+  if (isLoading) return <Screen><Header title="Profile" /><LoadingState label="Loading profile" /></Screen>;
+  if (isError) return <Screen><Header title="Profile" /><ErrorState onRetry={refetch} /></Screen>;
+  if (!data) return <Screen><Header title="Profile" /><Text>Not found</Text></Screen>;
+
+  const { user, followerCount, followingCount, posts } = data;
+
   return (
-    <Screen>
-      <Header title="Your profile" right={<Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')}><Icon name="bell" size={21} color={colors.foreground} /></Pressable>} />
-      <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Avatar author={data.user} size={76} /><Text style={[styles.displayName, { color: colors.foreground }]}>{data.user.displayName}</Text><Text style={[styles.username, { color: colors.mutedForeground }]}>@{data.user.username}</Text><View style={styles.communityLine}><View style={[styles.colorDot, { backgroundColor: data.user.communityColor }]} /><Text style={[styles.communityText, { color: colors.mutedForeground }]}>{data.user.communityName}</Text>{data.user.isPremium ? <View style={[styles.premium, { backgroundColor: colors.secondary }]}><Text style={[styles.premiumText, { color: colors.secondaryForeground }]}>PREMIUM</Text></View> : null}</View><View style={[styles.stats, { borderTopColor: colors.border }]}><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.followerCount}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Followers</Text></View><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.followingCount}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Following</Text></View><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.posts.length}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Posts</Text></View></View></View>
-      <SectionLabel>Recent posts</SectionLabel>
-      {data.posts.length ? data.posts.map((post) => <PostCard key={post.id} post={post} onComment={() => router.push({ pathname: '/post/[id]', params: { id: String(post.id) } })} />) : <EmptyState icon="pen-tool" title="Your first signal is waiting" body="Share a thought with your people." />}
+    <Screen scroll={false}>
+      <Header
+        title={user.displayName}
+        right={
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <IconButton name="settings" size={24} onPress={() => router.push('/settings')} />
+          </View>
+        }
+      />
+      
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 112 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.profileHeader}>
+          <Avatar author={user} size={96} />
+          <Text style={[styles.name, { color: colors.foreground }]}>{user.displayName}</Text>
+          <Text style={[styles.username, { color: colors.mutedForeground }]}>@{user.username}</Text>
+          
+          <View style={{ marginTop: 12 }}>
+            <CommunityPill name={user.communityName} color={user.communityColor} />
+          </View>
+
+          <View style={styles.stats}>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{followerCount}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Followers</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{followingCount}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Following</Text>
+            </View>
+          </View>
+
+          <View style={styles.actions}>
+            <Button label="Edit Profile" variant="secondary" shape="pill" style={{ flex: 1 }} />
+            <Button label="Share Profile" variant="secondary" shape="pill" style={{ flex: 1 }} />
+          </View>
+        </View>
+
+        <View style={styles.postsSection}>
+          <Text style={[styles.postsLabel, { color: colors.foreground }]}>Posts</Text>
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} onLike={() => {}} onComment={() => router.push(`/post/${post.id}`)} />
+          ))}
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  profileCard: { borderWidth: 1, borderRadius: 20, alignItems: 'center', padding: 19, marginBottom: 24 },
-  displayName: { fontSize: 22, fontWeight: '700', marginTop: 12 },
-  username: { fontSize: 13, marginTop: 3 },
-  communityLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-  colorDot: { width: 9, height: 9, borderRadius: 5 },
-  communityText: { fontSize: 12 },
-  premium: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5, marginLeft: 2 },
-  premiumText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
-  stats: { width: '100%', flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, marginTop: 19, paddingTop: 15 },
-  stat: { alignItems: 'center', minWidth: 70 },
-  statNumber: { fontSize: 17, fontWeight: '700' },
-  statLabel: { fontSize: 11, marginTop: 3 },
+  profileHeader: { alignItems: 'center', marginBottom: 24, paddingTop: 12 },
+  name: { fontSize: 24, fontWeight: '700', marginTop: 16 },
+  username: { fontSize: 16, marginTop: 4 },
+  stats: { flexDirection: 'row', gap: 40, marginTop: 24, marginBottom: 24 },
+  statBox: { alignItems: 'center' },
+  statValue: { fontSize: 20, fontWeight: '700' },
+  statLabel: { fontSize: 14, marginTop: 4 },
+  actions: { flexDirection: 'row', gap: 12, width: '100%' },
+  postsSection: { marginTop: 8 },
+  postsLabel: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
 });

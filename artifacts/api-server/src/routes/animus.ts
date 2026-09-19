@@ -8,6 +8,17 @@ import {
   GetFeedResponse,
   GetMessagesResponse,
   GetNotificationsResponse,
+  GetPostResponse,
+  GetPostCommentsResponse,
+  CreatePostCommentBody,
+  CreatePostCommentResponse,
+  ToggleFollowBody,
+  ToggleFollowResponse,
+  ToggleCommunityMembershipBody,
+  ToggleCommunityMembershipResponse,
+  GetConversationMessagesResponse,
+  MarkNotificationsReadBody,
+  MarkNotificationsReadResponse,
   GetProfileResponse,
   SendMessageBody,
   SendMessageResponse,
@@ -35,6 +46,51 @@ function asNumber(value: unknown): number {
 function asBoolean(value: unknown): boolean {
   return Boolean(value);
 }
+
+function validId(value: unknown, fallback = 1): number {
+  const parsed = numberParam(value, fallback);
+  if (parsed < 1) throw new Error("ID must be a positive integer");
+  return parsed;
+}
+
+function validHttpUrl(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string" || !/^https?:\/\/[^\s]+$/i.test(value)) {
+    throw new Error("Link must be a valid HTTP(S) URL");
+  }
+  return value;
+}
+
+function toMessage(row: Row) {
+  return {
+    id: asNumber(row.id),
+    senderId: asNumber(row.sender_id),
+    recipientId: asNumber(row.recipient_id),
+    body: asString(row.body),
+    createdAt: new Date(String(row.created_at)).toISOString(),
+    status: asString(row.status) as "sent" | "delivered" | "read",
+  };
+}
+
+function toComment(row: Row) {
+  return {
+    id: asNumber(row.comment_id ?? row.id),
+    postId: asNumber(row.post_id),
+    author: toAuthor(row),
+    body: asString(row.body),
+    createdAt: new Date(String(row.created_at)).toISOString(),
+    parentCommentId: row.parent_comment_id == null ? null : asNumber(row.parent_comment_id),
+  };
+}
+
+const commentSelect = sql`
+  SELECT cm.id AS comment_id, cm.post_id, cm.parent_comment_id, cm.body, cm.created_at,
+         u.id AS author_id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
+         c.name AS community_name, c.color AS community_color
+  FROM comments cm
+  JOIN users u ON u.id = cm.author_id
+  JOIN communities c ON c.id = u.community_id
+`;
 
 function toAuthor(row: Row) {
   return {
@@ -101,8 +157,78 @@ router.get("/feed", async (req, res) => {
     });
     res.json(data);
   } catch (error) {
-    req.log.error({ err: error }, "Failed to load Animus feed");
+    req.log.error({ err: error }, "Failed to load Gimmi feed");
     res.status(500).json({ message: "Unable to load the feed" });
+  }
+});
+
+router.get("/posts/:postId", async (req, res) => {
+  const postId = validId(req.params.postId, 0);
+  const viewerId = validId(req.query.viewerId, 1);
+  try {
+    const result = await db.execute(sql`${postSelect(viewerId)} WHERE p.id = ${postId}`);
+    const row = (result.rows as Row[])[0];
+    if (!row) {
+      res.status(404).json({ message: "Post not found" });
+      return;
+    }
+    res.json(GetPostResponse.parse(toPost(row, viewerId)));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to load post");
+    res.status(400).json({ message: "Unable to load post" });
+  }
+});
+
+router.get("/posts/:postId/comments", async (req, res) => {
+  const postId = validId(req.params.postId, 0);
+  try {
+    const result = await db.execute(sql`${commentSelect} WHERE cm.post_id = ${postId} ORDER BY cm.created_at ASC`);
+    res.json(GetPostCommentsResponse.parse({
+      comments: (result.rows as Row[]).map(toComment),
+    }));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to load comments");
+    res.status(400).json({ message: "Unable to load comments" });
+  }
+});
+
+router.post("/posts/:postId/comments", async (req, res) => {
+  const postId = validId(req.params.postId, 0);
+  try {
+    const body = CreatePostCommentBody.parse(req.body);
+    const parentCommentId = body.parentCommentId ?? null;
+    const row = await db.transaction(async (tx) => {
+      const post = await tx.execute(sql`SELECT id, author_id FROM posts WHERE id = ${postId}`);
+      if (!post.rows.length) throw new Error("Post not found");
+      const author = await tx.execute(sql`SELECT id FROM users WHERE id = ${body.authorId}`);
+      if (!author.rows.length) throw new Error("Author not found");
+      if (parentCommentId !== null) {
+        const parent = await tx.execute(sql`
+          SELECT id FROM comments WHERE id = ${parentCommentId} AND post_id = ${postId}
+        `);
+        if (!parent.rows.length) throw new Error("Parent comment not found");
+      }
+      const inserted = await tx.execute(sql`
+        INSERT INTO comments (post_id, author_id, parent_comment_id, body)
+        VALUES (${postId}, ${body.authorId}, ${parentCommentId}, ${body.body})
+        RETURNING id, post_id, author_id, parent_comment_id, body, created_at
+      `);
+      await tx.execute(sql`UPDATE posts SET comments = comments + 1 WHERE id = ${postId}`);
+      const postOwnerId = asNumber((post.rows as Row[])[0]?.author_id);
+      if (postOwnerId !== body.authorId) {
+        await tx.execute(sql`
+          INSERT INTO notifications (profile_id, kind, title, detail, read)
+          VALUES (${postOwnerId}, 'comment', 'New comment', ${body.body}, false)
+        `);
+      }
+      const comment = (inserted.rows as Row[])[0] ?? {};
+      const enriched = await tx.execute(sql`${commentSelect} WHERE cm.id = ${asNumber(comment.id)}`);
+      return (enriched.rows as Row[])[0] ?? {};
+    });
+    res.status(201).json(CreatePostCommentResponse.parse(toComment(row)));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to create comment");
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to create comment" });
   }
 });
 
@@ -115,7 +241,13 @@ router.get("/discover", async (req, res) => {
         SELECT id, name, slug, color, member_count, description
         FROM communities
         WHERE ${query ? sql`name ILIKE ${pattern} OR description ILIKE ${pattern}` : sql`TRUE`}
-        ORDER BY member_count DESC
+        ORDER BY
+          CASE slug
+            WHEN 'ladybug' THEN 0
+            WHEN 'cat' THEN 1
+            ELSE 2
+          END,
+          name ASC
         LIMIT 12
       `),
       db.execute(sql`
@@ -148,8 +280,9 @@ router.get("/discover", async (req, res) => {
 
 router.get("/communities/:communityId", async (req, res) => {
   const communityId = numberParam(req.params.communityId, 1);
+  const viewerId = numberParam(req.query.viewerId, 1);
   try {
-    const [communityResult, membersResult, postResult] = await Promise.all([
+    const [communityResult, membersResult, postResult, membershipResult] = await Promise.all([
       db.execute(sql`SELECT id, name, slug, color, member_count, description FROM communities WHERE id = ${communityId}`),
       db.execute(sql`
         SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
@@ -159,9 +292,13 @@ router.get("/communities/:communityId", async (req, res) => {
         ORDER BY u.follower_count DESC LIMIT 20
       `),
       db.execute(sql`
-        ${postSelect(1)}
+        ${postSelect(viewerId)}
         WHERE u.community_id = ${communityId}
         ORDER BY p.created_at DESC LIMIT 20
+      `),
+      db.execute(sql`
+        SELECT 1 FROM community_memberships
+        WHERE community_id = ${communityId} AND user_id = ${viewerId}
       `),
     ]);
     const communityRow = (communityResult.rows as Row[])[0];
@@ -179,7 +316,8 @@ router.get("/communities/:communityId", async (req, res) => {
         description: asString(communityRow.description),
       },
       members: (membersResult.rows as Row[]).map(toAuthor),
-      posts: (postResult.rows as Row[]).map((row) => toPost(row, 1)),
+       joinedByViewer: membershipResult.rows.length > 0,
+       posts: (postResult.rows as Row[]).map((row) => toPost(row, viewerId)),
     });
     res.json(data);
   } catch (error) {
@@ -188,12 +326,57 @@ router.get("/communities/:communityId", async (req, res) => {
   }
 });
 
+router.post("/communities/:communityId/membership", async (req, res) => {
+  const communityId = validId(req.params.communityId, 0);
+  try {
+    const body = ToggleCommunityMembershipBody.parse(req.body);
+    const result = await db.transaction(async (tx) => {
+      const community = await tx.execute(sql`SELECT id FROM communities WHERE id = ${communityId}`);
+      const user = await tx.execute(sql`SELECT id FROM users WHERE id = ${body.viewerId}`);
+      if (!community.rows.length) throw new Error("Community not found");
+      if (!user.rows.length) throw new Error("Viewer not found");
+      const inserted = await tx.execute(sql`
+        INSERT INTO community_memberships (community_id, user_id)
+        VALUES (${communityId}, ${body.viewerId})
+        ON CONFLICT (community_id, user_id) DO NOTHING
+        RETURNING id
+      `);
+      const joined = inserted.rows.length > 0;
+      if (joined) {
+        await tx.execute(sql`UPDATE communities SET member_count = member_count + 1 WHERE id = ${communityId}`);
+      } else {
+        const removed = await tx.execute(sql`
+          DELETE FROM community_memberships
+          WHERE community_id = ${communityId} AND user_id = ${body.viewerId}
+          RETURNING id
+        `);
+        if (removed.rows.length > 0) {
+          await tx.execute(sql`
+            UPDATE communities SET member_count = GREATEST(member_count - 1, 0)
+            WHERE id = ${communityId}
+          `);
+        }
+      }
+      const count = await tx.execute(sql`SELECT member_count FROM communities WHERE id = ${communityId}`);
+      return { joined, memberCount: asNumber((count.rows as Row[])[0]?.member_count) };
+    });
+    res.json(ToggleCommunityMembershipResponse.parse(result));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to update community membership");
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to update membership" });
+  }
+});
+
 router.post("/posts", async (req, res) => {
   try {
     const body = CreatePostBody.parse(req.body);
+    if (body.type === "text" && (!body.text || body.text.length > 500)) {
+      throw new Error("Text posts must contain between 1 and 500 characters");
+    }
+    const link = validHttpUrl(body.link);
     const insertResult = await db.execute(sql`
       INSERT INTO posts (author_id, type, text, caption, media_url, link)
-      VALUES (${body.authorId}, ${body.type}, ${body.text ?? ""}, ${body.caption ?? ""}, ${body.mediaUrl ?? ""}, ${body.link ?? null})
+      VALUES (${body.authorId}, ${body.type}, ${body.text ?? ""}, ${body.caption ?? ""}, ${body.mediaUrl ?? ""}, ${link})
       RETURNING id
     `);
     const postId = asNumber((insertResult.rows as Row[])[0]?.id);
@@ -275,6 +458,27 @@ router.get("/messages", async (req, res) => {
   }
 });
 
+router.get("/conversations/:conversationId/messages", async (req, res) => {
+  const conversationId = validId(req.params.conversationId, 0);
+  const viewerId = validId(req.query.viewerId, 1);
+  try {
+    const result = await db.execute(sql`
+      SELECT id, sender_id, recipient_id, body, created_at, status
+      FROM messages
+      WHERE ((sender_id = ${viewerId} AND recipient_id = ${conversationId})
+        OR (sender_id = ${conversationId} AND recipient_id = ${viewerId}))
+      ORDER BY created_at ASC, id ASC
+      LIMIT 100
+    `);
+    res.json(GetConversationMessagesResponse.parse({
+      messages: (result.rows as Row[]).map(toMessage),
+    }));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to load conversation history");
+    res.status(400).json({ message: "Unable to load conversation history" });
+  }
+});
+
 router.post("/messages", async (req, res) => {
   try {
     const body = SendMessageBody.parse(req.body);
@@ -302,6 +506,53 @@ router.post("/messages", async (req, res) => {
   } catch (error) {
     req.log.error({ err: error }, "Failed to send message");
     res.status(400).json({ message: "Unable to send message" });
+  }
+});
+
+router.post("/profiles/:profileId/follow", async (req, res) => {
+  const profileId = validId(req.params.profileId, 0);
+  try {
+    const body = ToggleFollowBody.parse(req.body);
+    if (body.viewerId === profileId) {
+      throw new Error("You cannot follow your own profile");
+    }
+    const result = await db.transaction(async (tx) => {
+      const profiles = await tx.execute(sql`
+        SELECT id FROM users WHERE id IN (${body.viewerId}, ${profileId})
+      `);
+      if (profiles.rows.length !== 2) throw new Error("Profile not found");
+      const inserted = await tx.execute(sql`
+        INSERT INTO followers (follower_id, followed_id)
+        VALUES (${body.viewerId}, ${profileId})
+        ON CONFLICT (follower_id, followed_id) DO NOTHING
+        RETURNING id
+      `);
+      const following = inserted.rows.length > 0;
+      if (following) {
+        await tx.execute(sql`UPDATE users SET follower_count = follower_count + 1 WHERE id = ${profileId}`);
+        await tx.execute(sql`UPDATE users SET following_count = following_count + 1 WHERE id = ${body.viewerId}`);
+        await tx.execute(sql`
+          INSERT INTO notifications (profile_id, kind, title, detail, read)
+          VALUES (${profileId}, 'follow', 'New follower', 'Someone started following you.', false)
+        `);
+      } else {
+        const removed = await tx.execute(sql`
+          DELETE FROM followers
+          WHERE follower_id = ${body.viewerId} AND followed_id = ${profileId}
+          RETURNING id
+        `);
+        if (removed.rows.length > 0) {
+          await tx.execute(sql`UPDATE users SET follower_count = GREATEST(follower_count - 1, 0) WHERE id = ${profileId}`);
+          await tx.execute(sql`UPDATE users SET following_count = GREATEST(following_count - 1, 0) WHERE id = ${body.viewerId}`);
+        }
+      }
+      const count = await tx.execute(sql`SELECT follower_count FROM users WHERE id = ${profileId}`);
+      return { following, followerCount: asNumber((count.rows as Row[])[0]?.follower_count) };
+    });
+    res.json(ToggleFollowResponse.parse(result));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to update follow state");
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to update follow state" });
   }
 });
 
@@ -356,6 +607,26 @@ router.get("/profiles/:profileId/notifications", async (req, res) => {
   } catch (error) {
     req.log.error({ err: error }, "Failed to load notifications");
     res.status(500).json({ message: "Unable to load notifications" });
+  }
+});
+
+router.post("/profiles/:profileId/notifications/read", async (req, res) => {
+  const profileId = validId(req.params.profileId, 0);
+  try {
+    const body = MarkNotificationsReadBody.parse(req.body ?? {});
+    const result = body.notificationId == null
+      ? await db.execute(sql`
+          UPDATE notifications SET read = true
+          WHERE profile_id = ${profileId} AND read = false
+        `)
+      : await db.execute(sql`
+          UPDATE notifications SET read = true
+          WHERE profile_id = ${profileId} AND id = ${body.notificationId} AND read = false
+        `);
+    res.json(MarkNotificationsReadResponse.parse({ updated: result.rowCount ?? 0 }));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to mark notifications as read");
+    res.status(400).json({ message: "Unable to mark notifications as read" });
   }
 });
 

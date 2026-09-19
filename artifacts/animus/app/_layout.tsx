@@ -5,18 +5,17 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { setBaseUrl } from '@workspace/api-client-react';
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 if (Platform.OS !== 'web') {
   SplashScreen.preventAutoHideAsync();
 }
@@ -26,22 +25,30 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+    <Stack screenOptions={{ headerBackTitle: 'Back', headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="post/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="notifications" options={{ headerShown: false }} />
-        <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="community/[id]" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="post/[id]" />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="conversation/[id]" />
+      <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="about" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="create/text" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="create/image" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="create/video" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="create/live" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="calls/voice/[id]" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="calls/video/[id]" options={{ presentation: 'fullScreenModal' }} />
     </Stack>
   );
 }
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
   });
 
   useEffect(() => {
@@ -50,9 +57,6 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // The native splash screen is meaningful on iOS/Android. On web, allowing
-  // the router to render while a local font asset is loading prevents a blank
-  // preview and lets the browser use its system fallback.
   if (!fontsLoaded && !fontError && Platform.OS !== 'web') return null;
 
   return (

@@ -11,6 +11,7 @@ import type { Post } from './post';
 
 export interface CommunityDetail {
   community: Community;
+  joinedByViewer?: boolean;
   members: Author[];
   posts: Post[];
 }

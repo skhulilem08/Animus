@@ -10,8 +10,10 @@ import type { CreatePostRequestType } from './createPostRequestType';
 export interface CreatePostRequest {
   authorId: number;
   type: CreatePostRequestType;
+  /** @maxLength 500 */
   text?: string;
   caption?: string;
   mediaUrl?: string;
+  /** @pattern ^https?://[^\\s]+$ */
   link?: string;
 }

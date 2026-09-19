@@ -20,22 +20,34 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Comment,
+  CommentsResponse,
   CommunityDetail,
+  ConversationMessagesResponse,
+  CreateCommentRequest,
   CreatePostRequest,
   DiscoverResponse,
   FeedResponse,
+  FollowResponse,
+  GetCommunityParams,
+  GetConversationMessagesParams,
   GetDiscoverParams,
   GetFeedParams,
   GetMessagesParams,
+  GetPostParams,
   HealthStatus,
   LikeRequest,
   LikeResponse,
+  MarkNotificationsReadRequest,
+  MarkNotificationsReadResponse,
+  MembershipResponse,
   Message,
   MessagesResponse,
   NotificationsResponse,
   Post,
   Profile,
-  SendMessageRequest
+  SendMessageRequest,
+  ViewerRequest
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -311,20 +323,29 @@ export function useGetDiscover<TData = Awaited<ReturnType<typeof getDiscover>>, 
 
 
 
-export const getGetCommunityUrl = (communityId: number,) => {
+export const getGetCommunityUrl = (communityId: number,
+    params?: GetCommunityParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/communities/${communityId}`
+  return stringifiedParams.length > 0 ? `/api/communities/${communityId}?${stringifiedParams}` : `/api/communities/${communityId}`
 }
 
 /**
  * @summary Get a community page
  */
-export const getCommunity = async (communityId: number, options?: Parameters<typeof customFetch>[1]): Promise<CommunityDetail> => {
+export const getCommunity = async (communityId: number,
+    params?: GetCommunityParams, options?: Parameters<typeof customFetch>[1]): Promise<CommunityDetail> => {
 
-  return customFetch<CommunityDetail>(getGetCommunityUrl(communityId),
+  return customFetch<CommunityDetail>(getGetCommunityUrl(communityId,params),
   {
     ...options,
     method: 'GET'
@@ -337,23 +358,25 @@ export const getCommunity = async (communityId: number, options?: Parameters<typ
 
 
 
-export const getGetCommunityQueryKey = (communityId: number,) => {
+export const getGetCommunityQueryKey = (communityId: number,
+    params?: GetCommunityParams,) => {
     return [
-    `/api/communities/${communityId}`
+    `/api/communities/${communityId}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetCommunityQueryOptions = <TData = Awaited<ReturnType<typeof getCommunity>>, TError = ErrorType<void>>(communityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetCommunityQueryOptions = <TData = Awaited<ReturnType<typeof getCommunity>>, TError = ErrorType<void>>(communityId: number,
+    params?: GetCommunityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetCommunityQueryKey(communityId);
+  const queryKey =  queryOptions?.queryKey ?? getGetCommunityQueryKey(communityId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommunity>>> = ({ signal }) => getCommunity(communityId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommunity>>> = ({ signal }) => getCommunity(communityId,params, { signal, ...requestOptions });
 
 
 
@@ -371,11 +394,12 @@ export type GetCommunityQueryError = ErrorType<void>
  */
 
 export function useGetCommunity<TData = Awaited<ReturnType<typeof getCommunity>>, TError = ErrorType<void>>(
- communityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ communityId: number,
+    params?: GetCommunityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommunity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetCommunityQueryOptions(communityId,options)
+  const queryOptions = getGetCommunityQueryOptions(communityId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -565,6 +589,439 @@ export const useTogglePostLike = <TError = ErrorType<unknown>,
       return useMutation(getTogglePostLikeMutationOptions(options));
     }
 
+export const getGetPostUrl = (postId: number,
+    params?: GetPostParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/posts/${postId}?${stringifiedParams}` : `/api/posts/${postId}`
+}
+
+/**
+ * @summary Get a post by ID
+ */
+export const getPost = async (postId: number,
+    params?: GetPostParams, options?: Parameters<typeof customFetch>[1]): Promise<Post> => {
+
+  return customFetch<Post>(getGetPostUrl(postId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPostQueryKey = (postId: number,
+    params?: GetPostParams,) => {
+    return [
+    `/api/posts/${postId}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPostQueryOptions = <TData = Awaited<ReturnType<typeof getPost>>, TError = ErrorType<void>>(postId: number,
+    params?: GetPostParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPost>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPostQueryKey(postId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPost>>> = ({ signal }) => getPost(postId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: postId !== null && postId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPost>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPostQueryResult = NonNullable<Awaited<ReturnType<typeof getPost>>>
+export type GetPostQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a post by ID
+ */
+
+export function useGetPost<TData = Awaited<ReturnType<typeof getPost>>, TError = ErrorType<void>>(
+ postId: number,
+    params?: GetPostParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPost>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPostQueryOptions(postId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPostCommentsUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/comments`
+}
+
+/**
+ * @summary Get persisted comments for a post
+ */
+export const getPostComments = async (postId: number, options?: Parameters<typeof customFetch>[1]): Promise<CommentsResponse> => {
+
+  return customFetch<CommentsResponse>(getGetPostCommentsUrl(postId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPostCommentsQueryKey = (postId: number,) => {
+    return [
+    `/api/posts/${postId}/comments`
+    ] as const;
+    }
+
+
+export const getGetPostCommentsQueryOptions = <TData = Awaited<ReturnType<typeof getPostComments>>, TError = ErrorType<unknown>>(postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPostCommentsQueryKey(postId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostComments>>> = ({ signal }) => getPostComments(postId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: postId !== null && postId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPostCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof getPostComments>>>
+export type GetPostCommentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get persisted comments for a post
+ */
+
+export function useGetPostComments<TData = Awaited<ReturnType<typeof getPostComments>>, TError = ErrorType<unknown>>(
+ postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPostCommentsQueryOptions(postId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePostCommentUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/comments`
+}
+
+/**
+ * @summary Add a comment or reply to a post
+ */
+export const createPostComment = async (postId: number,
+    createCommentRequest: CreateCommentRequest, options?: Parameters<typeof customFetch>[1]): Promise<Comment> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Comment>(getCreatePostCommentUrl(postId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createCommentRequest)
+  }
+);}
+
+
+
+
+
+export const getCreatePostCommentMutationKey = () => ['createPostComment'] as const;
+
+export const getCreatePostCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPostComment>>, TError,CreatePostCommentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPostComment>>, TError,CreatePostCommentMutationVariables, TContext> => {
+
+const mutationKey = getCreatePostCommentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPostComment>>, CreatePostCommentMutationVariables> = (props) => {
+          const {postId,data} = props ?? {};
+
+          return  createPostComment(postId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePostCommentMutationResult = NonNullable<Awaited<ReturnType<typeof createPostComment>>>
+    export type CreatePostCommentMutationBody = BodyType<CreateCommentRequest>
+    export type CreatePostCommentMutationError = ErrorType<unknown>
+    export type CreatePostCommentMutationVariables = {postId: number;data: BodyType<CreateCommentRequest>}
+
+    /**
+ * @summary Add a comment or reply to a post
+ */
+export const useCreatePostComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPostComment>>, TError,CreatePostCommentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPostComment>>,
+        TError,
+        CreatePostCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreatePostCommentMutationOptions(options));
+    }
+
+export const getToggleFollowUrl = (profileId: number,) => {
+
+
+
+
+  return `/api/profiles/${profileId}/follow`
+}
+
+/**
+ * @summary Follow or unfollow a profile
+ */
+export const toggleFollow = async (profileId: number,
+    viewerRequest: ViewerRequest, options?: Parameters<typeof customFetch>[1]): Promise<FollowResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FollowResponse>(getToggleFollowUrl(profileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(viewerRequest)
+  }
+);}
+
+
+
+
+
+export const getToggleFollowMutationKey = () => ['toggleFollow'] as const;
+
+export const getToggleFollowMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,ToggleFollowMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,ToggleFollowMutationVariables, TContext> => {
+
+const mutationKey = getToggleFollowMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleFollow>>, ToggleFollowMutationVariables> = (props) => {
+          const {profileId,data} = props ?? {};
+
+          return  toggleFollow(profileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleFollowMutationResult = NonNullable<Awaited<ReturnType<typeof toggleFollow>>>
+    export type ToggleFollowMutationBody = BodyType<ViewerRequest>
+    export type ToggleFollowMutationError = ErrorType<unknown>
+    export type ToggleFollowMutationVariables = {profileId: number;data: BodyType<ViewerRequest>}
+
+    /**
+ * @summary Follow or unfollow a profile
+ */
+export const useToggleFollow = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleFollow>>, TError,ToggleFollowMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleFollow>>,
+        TError,
+        ToggleFollowMutationVariables,
+        TContext
+      > => {
+      return useMutation(getToggleFollowMutationOptions(options));
+    }
+
+export const getToggleCommunityMembershipUrl = (communityId: number,) => {
+
+
+
+
+  return `/api/communities/${communityId}/membership`
+}
+
+/**
+ * @summary Join or leave a community
+ */
+export const toggleCommunityMembership = async (communityId: number,
+    viewerRequest: ViewerRequest, options?: Parameters<typeof customFetch>[1]): Promise<MembershipResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MembershipResponse>(getToggleCommunityMembershipUrl(communityId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(viewerRequest)
+  }
+);}
+
+
+
+
+
+export const getToggleCommunityMembershipMutationKey = () => ['toggleCommunityMembership'] as const;
+
+export const getToggleCommunityMembershipMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityMembership>>, TError,ToggleCommunityMembershipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityMembership>>, TError,ToggleCommunityMembershipMutationVariables, TContext> => {
+
+const mutationKey = getToggleCommunityMembershipMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleCommunityMembership>>, ToggleCommunityMembershipMutationVariables> = (props) => {
+          const {communityId,data} = props ?? {};
+
+          return  toggleCommunityMembership(communityId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleCommunityMembershipMutationResult = NonNullable<Awaited<ReturnType<typeof toggleCommunityMembership>>>
+    export type ToggleCommunityMembershipMutationBody = BodyType<ViewerRequest>
+    export type ToggleCommunityMembershipMutationError = ErrorType<unknown>
+    export type ToggleCommunityMembershipMutationVariables = {communityId: number;data: BodyType<ViewerRequest>}
+
+    /**
+ * @summary Join or leave a community
+ */
+export const useToggleCommunityMembership = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleCommunityMembership>>, TError,ToggleCommunityMembershipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleCommunityMembership>>,
+        TError,
+        ToggleCommunityMembershipMutationVariables,
+        TContext
+      > => {
+      return useMutation(getToggleCommunityMembershipMutationOptions(options));
+    }
+
 export const getGetMessagesUrl = (params?: GetMessagesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -737,6 +1194,95 @@ export const useSendMessage = <TError = ErrorType<unknown>,
       return useMutation(getSendMessageMutationOptions(options));
     }
 
+export const getGetConversationMessagesUrl = (conversationId: number,
+    params?: GetConversationMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/conversations/${conversationId}/messages?${stringifiedParams}` : `/api/conversations/${conversationId}/messages`
+}
+
+/**
+ * @summary Get persisted messages in a conversation
+ */
+export const getConversationMessages = async (conversationId: number,
+    params?: GetConversationMessagesParams, options?: Parameters<typeof customFetch>[1]): Promise<ConversationMessagesResponse> => {
+
+  return customFetch<ConversationMessagesResponse>(getGetConversationMessagesUrl(conversationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetConversationMessagesQueryKey = (conversationId: number,
+    params?: GetConversationMessagesParams,) => {
+    return [
+    `/api/conversations/${conversationId}/messages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetConversationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof getConversationMessages>>, TError = ErrorType<unknown>>(conversationId: number,
+    params?: GetConversationMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConversationMessagesQueryKey(conversationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConversationMessages>>> = ({ signal }) => getConversationMessages(conversationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: conversationId !== null && conversationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConversationMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetConversationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof getConversationMessages>>>
+export type GetConversationMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get persisted messages in a conversation
+ */
+
+export function useGetConversationMessages<TData = Awaited<ReturnType<typeof getConversationMessages>>, TError = ErrorType<unknown>>(
+ conversationId: number,
+    params?: GetConversationMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetConversationMessagesQueryOptions(conversationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetProfileUrl = (profileId: number,) => {
 
 
@@ -890,4 +1436,93 @@ export function useGetNotifications<TData = Awaited<ReturnType<typeof getNotific
 
 
 
+
+export const getMarkNotificationsReadUrl = (profileId: number,) => {
+
+
+
+
+  return `/api/profiles/${profileId}/notifications/read`
+}
+
+/**
+ * @summary Mark one or all notifications as read
+ */
+export const markNotificationsRead = async (profileId: number,
+    markNotificationsReadRequest?: MarkNotificationsReadRequest, options?: Parameters<typeof customFetch>[1]): Promise<MarkNotificationsReadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MarkNotificationsReadResponse>(getMarkNotificationsReadUrl(profileId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(markNotificationsReadRequest)
+  }
+);}
+
+
+
+
+
+export const getMarkNotificationsReadMutationKey = () => ['markNotificationsRead'] as const;
+
+export const getMarkNotificationsReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,MarkNotificationsReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,MarkNotificationsReadMutationVariables, TContext> => {
+
+const mutationKey = getMarkNotificationsReadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markNotificationsRead>>, MarkNotificationsReadMutationVariables> = (props) => {
+          const {profileId,data} = props ?? {};
+
+          return  markNotificationsRead(profileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkNotificationsReadMutationResult = NonNullable<Awaited<ReturnType<typeof markNotificationsRead>>>
+    export type MarkNotificationsReadMutationBody = BodyType<MarkNotificationsReadRequest> | undefined
+    export type MarkNotificationsReadMutationError = ErrorType<unknown>
+    export type MarkNotificationsReadMutationVariables = {profileId: number;data?: BodyType<MarkNotificationsReadRequest>}
+
+    /**
+ * @summary Mark one or all notifications as read
+ */
+export const useMarkNotificationsRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsRead>>, TError,MarkNotificationsReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markNotificationsRead>>,
+        TError,
+        MarkNotificationsReadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarkNotificationsReadMutationOptions(options));
+    }
 

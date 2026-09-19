@@ -1,40 +1,70 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGetMessages, useSendMessage } from '@workspace/api-client-react';
+import { View, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text } from '@/components/GimmiUI';
+import { Screen, Header, IconButton, Avatar } from '@/components/GimmiUI';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, relativeTime } from '@/components/AnimusUI';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function ConversationScreen() {
+export default function Conversation() {
+  const { id } = useLocalSearchParams();
   const colors = useColors();
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const messages = useGetMessages({ viewerId: 1 });
-  const sendMessage = useSendMessage();
-  const [body, setBody] = useState('');
-  const conversation = messages.data?.conversations.find((item) => String(item.id) === String(id));
-  const send = () => {
-    if (!body.trim() || !conversation) return;
-    sendMessage.mutate({ data: { senderId: 1, recipientId: conversation.person.id, body: body.trim() } }, { onSuccess: () => setBody('') });
+  const insets = useSafeAreaInsets();
+  const [msg, setMsg] = useState('');
+
+  // Mock messages
+  const [messages, setMessages] = useState([
+    { id: 1, text: 'Hello!', isMe: false },
+    { id: 2, text: 'Hi! How are you?', isMe: true },
+    { id: 3, text: 'Doing great, thanks!', isMe: false },
+  ].reverse());
+
+  const handleSend = () => {
+    if (!msg.trim()) return;
+    setMessages([{ id: Date.now(), text: msg, isMe: true }, ...messages]);
+    setMsg('');
   };
-  if (messages.isLoading) return <View style={[styles.full, { backgroundColor: colors.background }]}><LoadingState label="Opening the conversation" /></View>;
-  if (messages.isError) return <View style={[styles.full, { backgroundColor: colors.background }]}><ErrorState onRetry={() => messages.refetch()} /></View>;
-  if (!conversation) return <View style={[styles.full, { backgroundColor: colors.background }]}><EmptyState icon="message-circle" title="Conversation not found" body="This conversation may have been archived." /></View>;
-  return <KeyboardAvoidingView style={[styles.full, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    <View style={styles.content}><Header title={conversation.person.displayName} subtitle={`@${conversation.person.username}`} right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} /><View style={styles.person}><Avatar author={conversation.person} size={58} /><Text style={[styles.personNote, { color: colors.mutedForeground }]}>You share a room in {conversation.person.communityName}</Text></View><View style={{ flex: 1, justifyContent: 'flex-end', gap: 10 }}><View style={[styles.bubble, { backgroundColor: colors.card, borderColor: colors.border, alignSelf: 'flex-start' }]}><Text style={[styles.bubbleText, { color: colors.foreground }]}>{conversation.lastMessage}</Text><Text style={[styles.bubbleTime, { color: colors.mutedForeground }]}>{relativeTime(conversation.updatedAt)}</Text></View><View style={[styles.bubble, { backgroundColor: colors.primary, alignSelf: 'flex-end' }]}><Text style={[styles.bubbleText, { color: colors.primaryForeground }]}>Glad you found me here.</Text><Text style={[styles.bubbleTime, { color: colors.primaryForeground }]}>read</Text></View></View></View>
-    <View style={[styles.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}><TextInput value={body} onChangeText={setBody} placeholder="Write a message" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} multiline /><Pressable accessibilityRole="button" accessibilityLabel="Send message" onPress={send} disabled={!body.trim() || sendMessage.isPending} style={[styles.send, { backgroundColor: body.trim() ? colors.primary : colors.muted }]}><Icon name="arrow-up" size={18} color={body.trim() ? colors.primaryForeground : colors.mutedForeground} /></Pressable></View>
-  </KeyboardAvoidingView>;
+
+  return (
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Header
+        left={<IconButton name="arrow-left" onPress={() => router.back()} />}
+        title="Chat"
+        right={<View style={{ flexDirection: 'row', gap: 8 }}><IconButton name="phone" onPress={() => router.push(`/calls/voice/${id}`)} /><IconButton name="video" onPress={() => router.push(`/calls/video/${id}`)} /></View>}
+      />
+      
+      <FlatList
+        data={messages}
+        keyExtractor={item => String(item.id)}
+        inverted
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+        renderItem={({ item }) => (
+          <View style={[styles.bubble, { alignSelf: item.isMe ? 'flex-end' : 'flex-start', backgroundColor: item.isMe ? colors.tint : colors.card, borderColor: item.isMe ? colors.tint : colors.border }]}>
+            <Text style={[styles.bubbleText, { color: item.isMe ? '#fff' : colors.foreground }]}>{item.text}</Text>
+          </View>
+        )}
+      />
+
+      <View style={[styles.inputBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <IconButton name="plus" size={24} color={colors.tint} />
+        <TextInput
+          value={msg}
+          onChangeText={setMsg}
+          placeholder="Type a message..."
+          placeholderTextColor={colors.mutedForeground}
+          style={[styles.input, { backgroundColor: colors.input, color: colors.foreground }]}
+        />
+        <IconButton name="send" size={24} color={colors.tint} onPress={handleSend} />
+      </View>
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
-  full: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: 18, paddingTop: 18, paddingBottom: 12 },
-  person: { alignItems: 'center', gap: 8, paddingBottom: 10 },
-  personNote: { fontSize: 12 },
-  bubble: { maxWidth: '78%', borderRadius: 17, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 10 },
-  bubbleText: { fontSize: 14, lineHeight: 20 },
-  bubbleTime: { fontSize: 10, marginTop: 4, opacity: 0.8, textAlign: 'right' },
-  inputBar: { minHeight: 67, borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 10, paddingTop: 8, gap: 9 },
-  input: { flex: 1, maxHeight: 90, fontSize: 14, paddingHorizontal: 10 },
-  send: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  bubble: { maxWidth: '75%', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, marginBottom: 12, borderWidth: StyleSheet.hairlineWidth },
+  bubbleText: { fontSize: 16, lineHeight: 22 },
+  inputBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
+  input: { flex: 1, minHeight: 40, maxHeight: 100, borderRadius: 20, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 16 },
 });

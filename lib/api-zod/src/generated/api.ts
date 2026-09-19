@@ -100,6 +100,12 @@ export const GetCommunityParams = zod.object({
   "communityId": zod.coerce.number().int()
 })
 
+export const getCommunityQueryViewerIdDefault = 1;
+
+export const GetCommunityQueryParams = zod.object({
+  "viewerId": zod.coerce.number().int().default(getCommunityQueryViewerIdDefault)
+})
+
 export const GetCommunityResponse = zod.object({
   "community": zod.object({
   "id": zod.number().int(),
@@ -109,6 +115,7 @@ export const GetCommunityResponse = zod.object({
   "memberCount": zod.number().int(),
   "description": zod.string()
 }),
+  "joinedByViewer": zod.boolean().optional(),
   "members": zod.array(zod.object({
   "id": zod.number().int(),
   "displayName": zod.string(),
@@ -148,13 +155,18 @@ export const GetCommunityResponse = zod.object({
 /**
  * @summary Create a text, image, or video post
  */
+export const createPostBodyTextMax = 500;
+
+export const createPostBodyLinkRegExp = new RegExp('^https?://[^\\\\s]+$');
+
+
 export const CreatePostBody = zod.object({
   "authorId": zod.number().int(),
   "type": zod.enum(['text', 'image', 'video']),
-  "text": zod.string().optional(),
+  "text": zod.string().max(createPostBodyTextMax).optional(),
   "caption": zod.string().optional(),
   "mediaUrl": zod.string().optional(),
-  "link": zod.string().optional()
+  "link": zod.string().regex(createPostBodyLinkRegExp).optional()
 })
 
 export const CreatePostResponse = zod.object({
@@ -196,6 +208,149 @@ export const TogglePostLikeBody = zod.object({
 export const TogglePostLikeResponse = zod.object({
   "liked": zod.boolean(),
   "likes": zod.number().int()
+})
+
+
+/**
+ * @summary Get a post by ID
+ */
+export const GetPostParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const getPostQueryViewerIdDefault = 1;
+
+export const GetPostQueryParams = zod.object({
+  "viewerId": zod.coerce.number().int().default(getPostQueryViewerIdDefault)
+})
+
+export const GetPostResponse = zod.object({
+  "id": zod.number().int(),
+  "author": zod.object({
+  "id": zod.number().int(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatar": zod.string(),
+  "communityName": zod.string(),
+  "communityColor": zod.string(),
+  "isLive": zod.boolean(),
+  "isPremium": zod.boolean().optional()
+}),
+  "type": zod.enum(['text', 'image', 'video']),
+  "text": zod.string(),
+  "caption": zod.string(),
+  "mediaUrl": zod.string(),
+  "link": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "likes": zod.number().int(),
+  "comments": zod.number().int(),
+  "shares": zod.number().int(),
+  "likedByViewer": zod.boolean()
+})
+
+
+/**
+ * @summary Get persisted comments for a post
+ */
+export const GetPostCommentsParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+export const GetPostCommentsResponse = zod.object({
+  "comments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "postId": zod.number().int(),
+  "author": zod.object({
+  "id": zod.number().int(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatar": zod.string(),
+  "communityName": zod.string(),
+  "communityColor": zod.string(),
+  "isLive": zod.boolean(),
+  "isPremium": zod.boolean().optional()
+}),
+  "body": zod.string(),
+  "createdAt": zod.string(),
+  "parentCommentId": zod.number().int().nullable()
+}))
+})
+
+
+/**
+ * @summary Add a comment or reply to a post
+ */
+export const CreatePostCommentParams = zod.object({
+  "postId": zod.coerce.number().int()
+})
+
+
+export const createPostCommentBodyBodyMax = 1000;
+
+
+
+export const CreatePostCommentBody = zod.object({
+  "authorId": zod.number().int().min(1),
+  "body": zod.string().min(1).max(createPostCommentBodyBodyMax),
+  "parentCommentId": zod.number().int().nullish()
+})
+
+export const CreatePostCommentResponse = zod.object({
+  "id": zod.number().int(),
+  "postId": zod.number().int(),
+  "author": zod.object({
+  "id": zod.number().int(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatar": zod.string(),
+  "communityName": zod.string(),
+  "communityColor": zod.string(),
+  "isLive": zod.boolean(),
+  "isPremium": zod.boolean().optional()
+}),
+  "body": zod.string(),
+  "createdAt": zod.string(),
+  "parentCommentId": zod.number().int().nullable()
+})
+
+
+/**
+ * @summary Follow or unfollow a profile
+ */
+export const ToggleFollowParams = zod.object({
+  "profileId": zod.coerce.number().int()
+})
+
+
+
+
+export const ToggleFollowBody = zod.object({
+  "viewerId": zod.number().int().min(1)
+})
+
+export const ToggleFollowResponse = zod.object({
+  "following": zod.boolean(),
+  "followerCount": zod.number().int()
+})
+
+
+/**
+ * @summary Join or leave a community
+ */
+export const ToggleCommunityMembershipParams = zod.object({
+  "communityId": zod.coerce.number().int()
+})
+
+
+
+
+export const ToggleCommunityMembershipBody = zod.object({
+  "viewerId": zod.number().int().min(1)
+})
+
+export const ToggleCommunityMembershipResponse = zod.object({
+  "joined": zod.boolean(),
+  "memberCount": zod.number().int()
 })
 
 
@@ -244,6 +399,31 @@ export const SendMessageResponse = zod.object({
   "body": zod.string(),
   "createdAt": zod.string(),
   "status": zod.enum(['sent', 'delivered', 'read'])
+})
+
+
+/**
+ * @summary Get persisted messages in a conversation
+ */
+export const GetConversationMessagesParams = zod.object({
+  "conversationId": zod.coerce.number().int()
+})
+
+export const getConversationMessagesQueryViewerIdDefault = 1;
+
+export const GetConversationMessagesQueryParams = zod.object({
+  "viewerId": zod.coerce.number().int().default(getConversationMessagesQueryViewerIdDefault)
+})
+
+export const GetConversationMessagesResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.number().int(),
+  "senderId": zod.number().int(),
+  "recipientId": zod.number().int(),
+  "body": zod.string(),
+  "createdAt": zod.string(),
+  "status": zod.enum(['sent', 'delivered', 'read'])
+}))
 })
 
 
@@ -309,6 +489,25 @@ export const GetNotificationsResponse = zod.object({
   "createdAt": zod.string(),
   "read": zod.boolean()
 }))
+})
+
+
+/**
+ * @summary Mark one or all notifications as read
+ */
+export const MarkNotificationsReadParams = zod.object({
+  "profileId": zod.coerce.number().int()
+})
+
+
+
+
+export const MarkNotificationsReadBody = zod.object({
+  "notificationId": zod.number().int().min(1).optional()
+})
+
+export const MarkNotificationsReadResponse = zod.object({
+  "updated": zod.number().int()
 })
 
 

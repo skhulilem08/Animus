@@ -82,6 +82,40 @@ export const followersTable = pgTable(
   }),
 );
 
+export const communityMembershipsTable = pgTable(
+  "community_memberships",
+  {
+    id: serial("id").primaryKey(),
+    communityId: integer("community_id")
+      .notNull()
+      .references(() => communitiesTable.id),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    communityUserUnique: unique().on(table.communityId, table.userId),
+  }),
+);
+
+export const commentsTable = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id")
+    .notNull()
+    .references(() => postsTable.id),
+  authorId: integer("author_id")
+    .notNull()
+    .references(() => usersTable.id),
+  parentCommentId: integer("parent_comment_id"),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const messagesTable = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id")

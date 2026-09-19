@@ -1,17 +1,58 @@
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 
-export async function seedAnimus() {
+export async function seedGimmi() {
   await db.transaction(async (tx) => {
+  // Development correction: remove the retired Blue Hour fixture and every
+  // dependent record so rerunning the seed cannot leave it discoverable.
+  await tx.execute(sql`
+    DELETE FROM comments
+    WHERE author_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+       OR post_id IN (SELECT p.id FROM posts p JOIN users u ON u.id = p.author_id
+                      WHERE u.community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM likes
+    WHERE user_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+       OR post_id IN (SELECT p.id FROM posts p JOIN users u ON u.id = p.author_id
+                      WHERE u.community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM notifications
+    WHERE profile_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM messages
+    WHERE sender_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+       OR recipient_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM followers
+    WHERE follower_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+       OR followed_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM community_memberships
+    WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour')
+       OR user_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM posts
+    WHERE author_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
+  `);
+  await tx.execute(sql`
+    DELETE FROM users
+    WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour')
+  `);
+  await tx.execute(sql`DELETE FROM communities WHERE slug = 'blue-hour'`);
   await tx.execute(sql`
     INSERT INTO communities (name, slug, color, member_count, description) VALUES
-      ('Blue Hour', 'blue-hour', '#2864F0', 18420, 'Quiet minds, late light, and the things worth noticing.'),
       ('Saffron Club', 'saffron-club', '#D78A24', 9420, 'Make something small. Make it with care.'),
       ('Moss & Stone', 'moss-and-stone', '#6B8068', 7310, 'A slower corner for field notes and outdoor rituals.'),
       ('Night Shift', 'night-shift', '#7656B8', 5180, 'For people who come alive after the city goes quiet.'),
-      ('Ladybug', 'ladybug', '#FF3B30', 12600, 'Small details, bright spots, and a little courage.'),
+      ('Ladybug Community', 'ladybug', '#FF3B30', 12600, 'Small details, bright spots, and a little courage.'),
       ('Turtle', 'turtle', '#34C759', 8940, 'Move gently, notice more, and make space to grow.'),
-      ('Cat', 'cat', '#18251E', 7820, 'Independent minds, quiet rooms, and curious nights.'),
+      ('Cat Community', 'cat', '#18251E', 7820, 'Independent minds, quiet rooms, and curious nights.'),
       ('Dragon', 'dragon', '#FF453A', 11200, 'Big ideas, brave experiments, and unapologetic energy.'),
       ('Fox', 'fox', '#FF9500', 9650, 'Clever projects, warm conversations, and good instincts.'),
       ('Pig', 'pig', '#FF2D55', 6240, 'Kind people, soft landings, and honest joy.'),
@@ -31,11 +72,9 @@ export async function seedAnimus() {
     INSERT INTO users (display_name, username, avatar, community_id, is_live, is_premium, follower_count, following_count)
     SELECT seed.display_name, seed.username, seed.avatar, c.id, seed.is_live, seed.is_premium, seed.follower_count, seed.following_count
     FROM (VALUES
-      ('Mara Ellison', 'mara.e', 'ME', 'blue-hour', false, false, 1240, 382),
       ('Theo Park', 'theo.p', 'TP', 'saffron-club', true, true, 8920, 241),
       ('Nia Sol', 'nia.sol', 'NS', 'moss-and-stone', false, false, 2180, 614),
-      ('Jon Bell', 'jonbell', 'JB', 'night-shift', true, false, 1640, 198),
-      ('Ari Vale', 'arivale', 'AV', 'blue-hour', false, false, 742, 288)
+      ('Jon Bell', 'jonbell', 'JB', 'night-shift', true, false, 1640, 198)
     ) AS seed(display_name, username, avatar, slug, is_live, is_premium, follower_count, following_count)
     JOIN communities c ON c.slug = seed.slug
     ON CONFLICT (username) DO NOTHING
@@ -44,7 +83,6 @@ export async function seedAnimus() {
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
     SELECT u.id, seed.type, seed.text, seed.caption, seed.media_url, seed.link, seed.likes, seed.comments, seed.shares
     FROM (VALUES
-      ('mara.e', 'text', 'The best ideas usually arrive after the first quiet hour.', '', '', 'https://animus.app/quiet-hour', 248, 18, 9),
       ('theo.p', 'image', '', 'A little more color for the week ahead.', 'https://images.local/animus-feed-saffron.png', NULL, 642, 46, 24),
       ('nia.sol', 'image', '', 'Found this light on the walk home.', 'https://images.local/animus-feed-blue.png', NULL, 311, 22, 12),
       ('jonbell', 'video', '', 'Live from the late shift.', '', NULL, 127, 34, 7)
@@ -53,12 +91,35 @@ export async function seedAnimus() {
     WHERE NOT EXISTS (SELECT 1 FROM posts)
   `);
   await tx.execute(sql`
+    UPDATE posts
+    SET link = 'https://gimmi.app/quiet-hour'
+    WHERE link = 'https://animus.app/quiet-hour'
+  `);
+  await tx.execute(sql`
+    INSERT INTO community_memberships (community_id, user_id)
+    SELECT u.community_id, u.id
+    FROM users u
+    ON CONFLICT (community_id, user_id) DO NOTHING
+  `);
+  await tx.execute(sql`
+    INSERT INTO comments (post_id, author_id, body)
+    SELECT p.id, u.id, seed.body
+    FROM (VALUES
+      ('theo.p', 'nia.sol', 'This is exactly the kind of quiet moment I needed.'),
+      ('nia.sol', 'theo.p', 'Beautiful light — thank you for sharing it.')
+    ) AS seed(post_author, comment_author, body)
+    JOIN users post_user ON post_user.username = seed.post_author
+    JOIN users u ON u.username = seed.comment_author
+    JOIN posts p ON p.author_id = post_user.id
+    WHERE NOT EXISTS (SELECT 1 FROM comments)
+    LIMIT 2
+  `);
+  await tx.execute(sql`
     INSERT INTO messages (sender_id, recipient_id, body, status)
     SELECT sender.id, recipient.id, seed.body, seed.status
     FROM (VALUES
-      ('mara.e', 'theo.p', 'That light in your post is perfect.', 'read'),
-      ('mara.e', 'nia.sol', 'Are you going to the moss walk this weekend?', 'delivered'),
-      ('theo.p', 'mara.e', 'I saved you a spot.', 'sent')
+      ('theo.p', 'nia.sol', 'Are you going to the moss walk this weekend?', 'delivered'),
+      ('nia.sol', 'theo.p', 'I saved you a spot.', 'sent')
     ) AS seed(sender_username, recipient_username, body, status)
     JOIN users sender ON sender.username = seed.sender_username
     JOIN users recipient ON recipient.username = seed.recipient_username
@@ -68,10 +129,10 @@ export async function seedAnimus() {
     INSERT INTO notifications (profile_id, kind, title, detail, read)
     SELECT u.id, seed.kind, seed.title, seed.detail, seed.read
     FROM (VALUES
-      ('mara.e', 'like', 'Theo liked your post', 'The best ideas usually arrive after the first quiet hour.', false),
-      ('mara.e', 'comment', 'Nia commented on your post', 'This is exactly what I needed today.', false),
-      ('mara.e', 'live', 'Theo is live now', 'Saffron Club · Studio session', true),
-      ('mara.e', 'community', 'Blue Hour has a new note', 'A new weekly prompt is ready.', true)
+      ('theo.p', 'like', 'Nia liked your post', 'A little more color for the week ahead.', false),
+      ('theo.p', 'comment', 'Nia commented on your post', 'This is exactly what I needed today.', false),
+      ('theo.p', 'live', 'Theo is live now', 'Saffron Club · Studio session', true),
+      ('theo.p', 'community', 'Saffron Club has a new note', 'A new weekly prompt is ready.', true)
     ) AS seed(username, kind, title, detail, read)
     JOIN users u ON u.username = seed.username
     WHERE NOT EXISTS (SELECT 1 FROM notifications)

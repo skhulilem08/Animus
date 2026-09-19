@@ -1,53 +1,67 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { getGetFeedQueryKey, useCreatePost } from '@workspace/api-client-react';
-import { useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Text } from '@/components/GimmiUI';
+import { Screen, Header, Icon } from '@/components/GimmiUI';
+import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { Header, Icon, Screen } from '@/components/AnimusUI';
 
-type PostKind = 'text' | 'image' | 'video';
-
-export default function CreateScreen() {
+export default function CreateMenu() {
   const colors = useColors();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [kind, setKind] = useState<PostKind>('text');
-  const [text, setText] = useState('');
-  const [caption, setCaption] = useState('');
-  const createPost = useCreatePost();
-  const canPost = text.trim().length > 0 || caption.trim().length > 0;
 
-  const publish = () => {
-    if (!canPost || createPost.isPending) return;
-    createPost.mutate({ data: { authorId: 1, type: kind, text: text.trim(), caption: caption.trim() } }, { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey({ viewerId: 1 }) }); setText(''); setCaption(''); router.replace('/'); } });
-  };
   return (
     <Screen>
-      <Header title="Make something" subtitle="Leave a little signal for your people." right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} />
-      <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <TextInput autoFocus value={text} onChangeText={setText} multiline placeholder="What has your attention?" placeholderTextColor={colors.mutedForeground} style={[styles.textInput, { color: colors.foreground }]} />
-         {kind !== 'text' ? <View style={[styles.mediaSlot, { backgroundColor: colors.muted }]}><Icon name={kind === 'video' ? 'video' : 'image'} size={28} color={colors.mutedForeground} /><Text style={[styles.mediaSlotText, { color: colors.mutedForeground }]}>{kind === 'video' ? 'Add a clip' : 'Add an image'}</Text><Text style={[styles.mediaHint, { color: colors.mutedForeground }]}>Media selection will open here</Text></View> : null}
-        <TextInput value={caption} onChangeText={setCaption} placeholder="Add a quiet caption (optional)" placeholderTextColor={colors.mutedForeground} style={[styles.captionInput, { color: colors.foreground, borderTopColor: colors.border }]} />
+      <Header title="Create" />
+      
+      <View style={styles.menu}>
+        <Pressable style={({ pressed }) => [styles.item, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push('/create/text')}>
+          <View style={[styles.iconBox, { backgroundColor: colors.tint + '20' }]}>
+            <Icon name="text" size={28} color={colors.tint} />
+          </View>
+          <View style={styles.textBox}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Text Post</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Share your thoughts</Text>
+          </View>
+        </Pressable>
+
+        <Pressable style={({ pressed }) => [styles.item, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push('/create/image')}>
+          <View style={[styles.iconBox, { backgroundColor: '#34C75920' }]}>
+            <Icon name="image" size={28} color="#34C759" />
+          </View>
+          <View style={styles.textBox}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Image Post</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Add a photo</Text>
+          </View>
+        </Pressable>
+
+        <Pressable style={({ pressed }) => [styles.item, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push('/create/video')}>
+          <View style={[styles.iconBox, { backgroundColor: '#FF3B3020' }]}>
+            <Icon name="video" size={28} color="#FF3B30" />
+          </View>
+          <View style={styles.textBox}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Video / Clip</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Share a video</Text>
+          </View>
+        </Pressable>
+
+        <Pressable style={({ pressed }) => [styles.item, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push('/create/live')}>
+          <View style={[styles.iconBox, { backgroundColor: '#FF3B3020' }]}>
+            <Icon name="play" size={28} color="#FF3B30" />
+          </View>
+          <View style={styles.textBox}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Start Live</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Go live now</Text>
+          </View>
+        </Pressable>
       </View>
-       <View style={styles.kindRow}>{(['text', 'image', 'video'] as PostKind[]).map((option) => <Pressable key={option} onPress={() => setKind(option)} style={[styles.kind, { backgroundColor: kind === option ? colors.secondary : colors.card, borderColor: kind === option ? colors.primary : colors.border }]}><Icon name={option === 'text' ? 'text' : option === 'image' ? 'image' : 'video'} size={16} color={kind === option ? colors.primary : colors.mutedForeground} /><Text style={[styles.kindText, { color: kind === option ? colors.secondaryForeground : colors.mutedForeground }]}>{option[0].toUpperCase() + option.slice(1)}</Text></Pressable>)}</View>
-       <Pressable accessibilityRole="button" onPress={publish} disabled={!canPost || createPost.isPending} style={({ pressed }) => [styles.publish, { backgroundColor: canPost ? colors.primary : colors.muted, opacity: pressed ? 0.75 : 1 }]}><Text style={[styles.publishText, { color: canPost ? colors.primaryForeground : colors.mutedForeground }]}>{createPost.isPending ? 'Sharing…' : 'Share with your people'}</Text><Icon name="arrow-up" size={18} color={canPost ? colors.primaryForeground : colors.mutedForeground} /></Pressable>
-      {createPost.isError ? <Text style={[styles.error, { color: colors.destructive }]}>That did not send. Check your connection and try again.</Text> : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  composer: { borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 15 },
-  textInput: { minHeight: 180, padding: 17, textAlignVertical: 'top', fontSize: 19, lineHeight: 27 },
-  mediaSlot: { height: 165, marginHorizontal: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 7 },
-  mediaSlotText: { fontSize: 14, fontWeight: '600' },
-  mediaHint: { fontSize: 11 },
-  captionInput: { minHeight: 52, borderTopWidth: 1, paddingHorizontal: 17, fontSize: 14 },
-  kindRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  kind: { flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  kindText: { fontSize: 12, fontWeight: '600' },
-  publish: { minHeight: 52, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  publishText: { fontSize: 15, fontWeight: '700' },
-  error: { textAlign: 'center', fontSize: 13, marginTop: 12 },
+  menu: { gap: 16, marginTop: 12 },
+  item: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
+  iconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  textBox: { marginLeft: 16, flex: 1 },
+  title: { fontSize: 17, fontWeight: '600', marginBottom: 4 },
+  subtitle: { fontSize: 14 },
 });

@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedAnimus } from "./seed";
+import { seedGimmi } from "./seed";
 
 const rawPort = process.env["PORT"];
 
@@ -16,7 +16,7 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-seedAnimus()
+seedGimmi()
   .then(() => {
     app.listen(port, (err) => {
       if (err) {
@@ -28,6 +28,6 @@ seedAnimus()
     });
   })
   .catch((err: unknown) => {
-    logger.error({ err }, "Failed to prepare Animus database");
+    logger.error({ err }, "Failed to prepare Gimmi database");
     process.exit(1);
   });

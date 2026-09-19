@@ -8,7 +8,23 @@ export async function seedAnimus() {
       ('Blue Hour', 'blue-hour', '#2864F0', 18420, 'Quiet minds, late light, and the things worth noticing.'),
       ('Saffron Club', 'saffron-club', '#D78A24', 9420, 'Make something small. Make it with care.'),
       ('Moss & Stone', 'moss-and-stone', '#6B8068', 7310, 'A slower corner for field notes and outdoor rituals.'),
-      ('Night Shift', 'night-shift', '#7656B8', 5180, 'For people who come alive after the city goes quiet.')
+      ('Night Shift', 'night-shift', '#7656B8', 5180, 'For people who come alive after the city goes quiet.'),
+      ('Ladybug', 'ladybug', '#FF3B30', 12600, 'Small details, bright spots, and a little courage.'),
+      ('Turtle', 'turtle', '#34C759', 8940, 'Move gently, notice more, and make space to grow.'),
+      ('Cat', 'cat', '#18251E', 7820, 'Independent minds, quiet rooms, and curious nights.'),
+      ('Dragon', 'dragon', '#FF453A', 11200, 'Big ideas, brave experiments, and unapologetic energy.'),
+      ('Fox', 'fox', '#FF9500', 9650, 'Clever projects, warm conversations, and good instincts.'),
+      ('Pig', 'pig', '#FF2D55', 6240, 'Kind people, soft landings, and honest joy.'),
+      ('Horse', 'horse', '#8E5A3C', 7130, 'Open roads, steady practice, and grounded stories.'),
+      ('Ox', 'ox', '#007AFF', 10800, 'Patient work, clear thinking, and dependable community.'),
+      ('Tiger', 'tiger', '#AF52DE', 8840, 'Creative force, vivid expression, and fearless curiosity.'),
+      ('Snake', 'snake', '#14B8A6', 5370, 'Change, craft, and a calmer way to begin again.'),
+      ('Rooster', 'rooster', '#D70015', 6680, 'Early starts, fiery ambition, and shared momentum.'),
+      ('Ghost', 'ghost', '#1C1C1E', 4590, 'The strange, the quiet, and the stories between worlds.'),
+      ('Bunny', 'bunny', '#64D2FF', 9210, 'Baby-blue optimism, gentle rituals, and bright mornings.'),
+      ('Dog', 'dog', '#C56A2D', 11900, 'Rusty-orange warmth, loyalty, and familiar faces.'),
+      ('Butterfly', 'butterfly', '#BF5AF2', 7460, 'New perspectives, beautiful shifts, and becoming.'),
+      ('Peacock', 'peacock', '#0A3D62', 5820, 'Navy calm, thoughtful display, and quiet confidence.')
     ON CONFLICT (slug) DO NOTHING
   `);
   await tx.execute(sql`

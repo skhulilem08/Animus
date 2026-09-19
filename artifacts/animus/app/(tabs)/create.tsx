@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { getGetFeedQueryKey, useCreatePost } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
-import { Screen, Header } from '@/components/AnimusUI';
+import { Header, Icon, Screen } from '@/components/AnimusUI';
 
 type PostKind = 'text' | 'image' | 'video';
 
@@ -25,14 +24,14 @@ export default function CreateScreen() {
   };
   return (
     <Screen>
-      <Header title="Make something" subtitle="Leave a little signal for your people." right={<Pressable onPress={() => router.back()}><Feather name="x" size={22} color={colors.foreground} /></Pressable>} />
+      <Header title="Make something" subtitle="Leave a little signal for your people." right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} />
       <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TextInput autoFocus value={text} onChangeText={setText} multiline placeholder="What has your attention?" placeholderTextColor={colors.mutedForeground} style={[styles.textInput, { color: colors.foreground }]} />
-        {kind !== 'text' ? <View style={[styles.mediaSlot, { backgroundColor: colors.muted }]}><Feather name={kind === 'video' ? 'video' : 'image'} size={28} color={colors.mutedForeground} /><Text style={[styles.mediaSlotText, { color: colors.mutedForeground }]}>{kind === 'video' ? 'Add a clip' : 'Add an image'}</Text><Text style={[styles.mediaHint, { color: colors.mutedForeground }]}>Media selection will open here</Text></View> : null}
+         {kind !== 'text' ? <View style={[styles.mediaSlot, { backgroundColor: colors.muted }]}><Icon name={kind === 'video' ? 'video' : 'image'} size={28} color={colors.mutedForeground} /><Text style={[styles.mediaSlotText, { color: colors.mutedForeground }]}>{kind === 'video' ? 'Add a clip' : 'Add an image'}</Text><Text style={[styles.mediaHint, { color: colors.mutedForeground }]}>Media selection will open here</Text></View> : null}
         <TextInput value={caption} onChangeText={setCaption} placeholder="Add a quiet caption (optional)" placeholderTextColor={colors.mutedForeground} style={[styles.captionInput, { color: colors.foreground, borderTopColor: colors.border }]} />
       </View>
-      <View style={styles.kindRow}>{(['text', 'image', 'video'] as PostKind[]).map((option) => <Pressable key={option} onPress={() => setKind(option)} style={[styles.kind, { backgroundColor: kind === option ? colors.secondary : colors.card, borderColor: kind === option ? colors.primary : colors.border }]}><Feather name={option === 'text' ? 'type' : option === 'image' ? 'image' : 'video'} size={16} color={kind === option ? colors.primary : colors.mutedForeground} /><Text style={[styles.kindText, { color: kind === option ? colors.secondaryForeground : colors.mutedForeground }]}>{option[0].toUpperCase() + option.slice(1)}</Text></Pressable>)}</View>
-      <Pressable onPress={publish} disabled={!canPost || createPost.isPending} style={({ pressed }) => [styles.publish, { backgroundColor: canPost ? colors.primary : colors.muted, opacity: pressed ? 0.75 : 1 }]}><Text style={[styles.publishText, { color: canPost ? colors.primaryForeground : colors.mutedForeground }]}>{createPost.isPending ? 'Sharing…' : 'Share with your people'}</Text><Feather name="arrow-up-right" size={18} color={canPost ? colors.primaryForeground : colors.mutedForeground} /></Pressable>
+       <View style={styles.kindRow}>{(['text', 'image', 'video'] as PostKind[]).map((option) => <Pressable key={option} onPress={() => setKind(option)} style={[styles.kind, { backgroundColor: kind === option ? colors.secondary : colors.card, borderColor: kind === option ? colors.primary : colors.border }]}><Icon name={option === 'text' ? 'text' : option === 'image' ? 'image' : 'video'} size={16} color={kind === option ? colors.primary : colors.mutedForeground} /><Text style={[styles.kindText, { color: kind === option ? colors.secondaryForeground : colors.mutedForeground }]}>{option[0].toUpperCase() + option.slice(1)}</Text></Pressable>)}</View>
+       <Pressable accessibilityRole="button" onPress={publish} disabled={!canPost || createPost.isPending} style={({ pressed }) => [styles.publish, { backgroundColor: canPost ? colors.primary : colors.muted, opacity: pressed ? 0.75 : 1 }]}><Text style={[styles.publishText, { color: canPost ? colors.primaryForeground : colors.mutedForeground }]}>{createPost.isPending ? 'Sharing…' : 'Share with your people'}</Text><Icon name="arrow-up" size={18} color={canPost ? colors.primaryForeground : colors.mutedForeground} /></Pressable>
       {createPost.isError ? <Text style={[styles.error, { color: colors.destructive }]}>That did not send. Check your connection and try again.</Text> : null}
     </Screen>
   );

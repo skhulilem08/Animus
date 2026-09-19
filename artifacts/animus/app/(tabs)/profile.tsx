@@ -1,10 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useGetProfile } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
+import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -16,7 +15,7 @@ export default function ProfileScreen() {
   if (!data) return <Screen><EmptyState title="No profile yet" body="Your Animus profile will appear here." /></Screen>;
   return (
     <Screen>
-      <Header title="Your profile" right={<Pressable onPress={() => router.push('/notifications')}><Feather name="bell" size={21} color={colors.foreground} /></Pressable>} />
+      <Header title="Your profile" right={<Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')}><Icon name="bell" size={21} color={colors.foreground} /></Pressable>} />
       <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Avatar author={data.user} size={76} /><Text style={[styles.displayName, { color: colors.foreground }]}>{data.user.displayName}</Text><Text style={[styles.username, { color: colors.mutedForeground }]}>@{data.user.username}</Text><View style={styles.communityLine}><View style={[styles.colorDot, { backgroundColor: data.user.communityColor }]} /><Text style={[styles.communityText, { color: colors.mutedForeground }]}>{data.user.communityName}</Text>{data.user.isPremium ? <View style={[styles.premium, { backgroundColor: colors.secondary }]}><Text style={[styles.premiumText, { color: colors.secondaryForeground }]}>PREMIUM</Text></View> : null}</View><View style={[styles.stats, { borderTopColor: colors.border }]}><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.followerCount}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Followers</Text></View><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.followingCount}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Following</Text></View><View style={styles.stat}><Text style={[styles.statNumber, { color: colors.foreground }]}>{data.posts.length}</Text><Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Posts</Text></View></View></View>
       <SectionLabel>Recent posts</SectionLabel>

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useGetCommunity } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, CommunityPill, EmptyState, ErrorState, Header, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
+import { getCommunityTheme } from '@/constants/communityThemes';
+import { Avatar, CommunityPill, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
 
 export default function CommunityScreen() {
   const colors = useColors();
@@ -16,11 +16,12 @@ export default function CommunityScreen() {
   if (community.isError) return <Screen><ErrorState onRetry={() => community.refetch()} /></Screen>;
   const data = community.data;
   if (!data) return <Screen><EmptyState title="This room moved" body="Try discovering another community." /></Screen>;
+  const theme = getCommunityTheme(data.community);
   return (
     <Screen>
-      <Header title={data.community.name} subtitle={`/${data.community.slug}`} right={<Pressable onPress={() => router.back()}><Feather name="x" size={22} color={colors.foreground} /></Pressable>} />
-      <View style={[styles.hero, { backgroundColor: data.community.color }]}>
-        <View style={[styles.hash, { backgroundColor: colors.card }]}><Feather name="hash" size={27} color={colors.foreground} /></View><CommunityPill community={data.community} /><Text style={[styles.heroTitle, { color: colors.accentForeground }]}>{data.community.description}</Text><Text style={[styles.memberCount, { color: colors.accentForeground }]}>{data.community.memberCount.toLocaleString()} members sharing the same wavelength</Text><Pressable onPress={() => setJoined((current) => !current)} style={({ pressed }) => [styles.joinButton, { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 }]}><Text style={[styles.joinText, { color: colors.foreground }]}>{joined ? 'Joined' : 'Join community'}</Text></Pressable>
+      <Header title={data.community.name} subtitle={`/${data.community.slug}`} right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} />
+      <View style={[styles.hero, { backgroundColor: theme.primary }]}>
+        <View style={[styles.hash, { backgroundColor: theme.soft }]}><Icon name="hash" size={27} color={theme.foreground} /></View><CommunityPill community={data.community} /><Text style={[styles.heroTitle, { color: theme.onPrimary }]}>{data.community.description}</Text><Text style={[styles.memberCount, { color: theme.onPrimary }]}>{data.community.memberCount.toLocaleString()} members sharing the same wavelength</Text><Pressable accessibilityRole="button" onPress={() => setJoined((current) => !current)} style={({ pressed }) => [styles.joinButton, { backgroundColor: theme.onPrimary, opacity: pressed ? 0.7 : 1 }]}><Text style={[styles.joinText, { color: theme.primary }]}>{joined ? 'Joined' : 'Join community'}</Text></Pressable>
       </View>
       <SectionLabel>People in the room</SectionLabel>
       <View style={styles.members}>{data.members.slice(0, 6).map((member) => <View key={member.id} style={styles.member}><Avatar author={member} size={38} /><Text numberOfLines={1} style={[styles.memberName, { color: colors.foreground }]}>{member.displayName}</Text></View>)}</View>

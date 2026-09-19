@@ -2,10 +2,9 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
 import { getGetFeedQueryKey, useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
+import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen, SectionLabel } from '@/components/AnimusUI';
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -27,7 +26,7 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Header title="Good morning" subtitle="A slower, better kind of feed." right={<Pressable onPress={() => router.push('/notifications')}><View><Feather name="bell" size={22} color={colors.foreground} /><View style={[styles.notificationDot, { backgroundColor: colors.primary }]} /></View></Pressable>} />
+      <Header title="Good morning" subtitle="A slower, better kind of feed." right={<Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')}><View><Icon name="bell" size={22} color={colors.foreground} /><View style={[styles.notificationDot, { backgroundColor: colors.primary }]} /></View></Pressable>} />
       <View style={[styles.introCard, { backgroundColor: colors.primary }]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.introKicker, { color: colors.primaryForeground }]}>YOUR PEOPLE, TODAY</Text>

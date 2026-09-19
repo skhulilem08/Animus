@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useGetFeed } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, LoadingState, PostCard, Screen } from '@/components/AnimusUI';
+import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, PostCard, Screen } from '@/components/AnimusUI';
 
 export default function PostDetailScreen() {
   const colors = useColors();
@@ -19,12 +18,12 @@ export default function PostDetailScreen() {
   if (!post) return <Screen><EmptyState icon="message-circle" title="Post not found" body="It may have been moved or is only visible in its room." /></Screen>;
   return (
     <Screen>
-      <Header title="Conversation" subtitle={`${post.comments} replies`} right={<Pressable onPress={() => router.back()}><Feather name="x" size={22} color={colors.foreground} /></Pressable>} />
+      <Header title="Conversation" subtitle={`${post.comments} replies`} right={<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()}><Icon name="x" size={22} color={colors.foreground} /></Pressable>} />
       <PostCard post={post} />
       <Text style={[styles.replyLabel, { color: colors.foreground }]}>Replies</Text>
       <View style={[styles.reply, { backgroundColor: colors.card, borderColor: colors.border }]}><Avatar author={post.author} size={36} /><View style={{ flex: 1 }}><Text style={[styles.replyName, { color: colors.foreground }]}>{post.author.displayName}</Text><Text style={[styles.replyText, { color: colors.mutedForeground }]}>A thoughtful way to put it. Thanks for sharing this here.</Text></View></View>
       {replies.map((reply, index) => <View key={`${reply}-${index}`} style={[styles.reply, { backgroundColor: colors.secondary, borderColor: colors.border }]}><Avatar size={36} /><View style={{ flex: 1 }}><Text style={[styles.replyName, { color: colors.foreground }]}>You</Text><Text style={[styles.replyText, { color: colors.secondaryForeground }]}>{reply}</Text></View></View>)}
-      <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}><TextInput value={comment} onChangeText={setComment} placeholder="Add to the conversation" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} /><Pressable onPress={() => { if (comment.trim()) { setReplies((current) => [...current, comment.trim()]); setComment(''); } }} disabled={!comment.trim()} style={[styles.send, { backgroundColor: comment.trim() ? colors.primary : colors.muted }]}><Feather name="arrow-up" size={18} color={comment.trim() ? colors.primaryForeground : colors.mutedForeground} /></Pressable></View>
+      <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}><TextInput value={comment} onChangeText={setComment} placeholder="Add to the conversation" placeholderTextColor={colors.mutedForeground} style={[styles.input, { color: colors.foreground }]} /><Pressable accessibilityRole="button" accessibilityLabel="Send comment" onPress={() => { if (comment.trim()) { setReplies((current) => [...current, comment.trim()]); setComment(''); } }} disabled={!comment.trim()} style={[styles.send, { backgroundColor: comment.trim() ? colors.primary : colors.muted }]}><Icon name="arrow-up" size={18} color={comment.trim() ? colors.primaryForeground : colors.mutedForeground} /></Pressable></View>
     </Screen>
   );
 }

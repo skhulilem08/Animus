@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useGetDiscover } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, CommunityPill, EmptyState, ErrorState, Header, LoadingState, Screen, SearchField, SectionLabel } from '@/components/AnimusUI';
+import { getCommunityTheme } from '@/constants/communityThemes';
+import { Avatar, CommunityPill, EmptyState, ErrorState, Header, Icon, LoadingState, Screen, SearchField, SectionLabel } from '@/components/AnimusUI';
 
 export default function DiscoverScreen() {
   const colors = useColors();
@@ -26,11 +26,11 @@ export default function DiscoverScreen() {
       <SectionLabel>Communities worth a look</SectionLabel>
       <View style={styles.communityGrid}>
         {(data?.communities ?? []).map((community) => <Pressable key={community.id} onPress={() => router.push({ pathname: '/community/[id]', params: { id: String(community.id) } })} style={[styles.communityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.communityMark, { backgroundColor: community.color }]}><Feather name="hash" size={17} color={colors.accentForeground} /></View><CommunityPill community={community} /><Text style={[styles.communityName, { color: colors.foreground }]}>{community.name}</Text><Text numberOfLines={2} style={[styles.communityDescription, { color: colors.mutedForeground }]}>{community.description}</Text><Text style={[styles.memberCount, { color: colors.mutedForeground }]}>{community.memberCount.toLocaleString()} members</Text>
+          <View style={[styles.communityMark, { backgroundColor: getCommunityTheme(community).primary }]}><Icon name="hash" size={17} color={getCommunityTheme(community).onPrimary} /></View><CommunityPill community={community} /><Text style={[styles.communityName, { color: colors.foreground }]}>{community.name}</Text><Text numberOfLines={2} style={[styles.communityDescription, { color: colors.mutedForeground }]}>{community.description}</Text><Text style={[styles.memberCount, { color: colors.mutedForeground }]}>{community.memberCount.toLocaleString()} members</Text>
         </Pressable>)}
       </View>
       <SectionLabel>People to know</SectionLabel>
-      {(data?.people ?? []).map((person) => <Pressable key={person.id} onPress={() => router.push('/messages')} style={[styles.personRow, { borderBottomColor: colors.border }]}><Avatar author={person} size={44} /><View style={{ flex: 1 }}><Text style={[styles.personName, { color: colors.foreground }]}>{person.displayName}</Text><Text style={[styles.personMeta, { color: colors.mutedForeground }]}>@{person.username} · {person.communityName}</Text></View><Feather name="user-plus" size={19} color={colors.primary} /></Pressable>)}
+      {(data?.people ?? []).map((person) => <Pressable key={person.id} onPress={() => router.push('/messages')} style={[styles.personRow, { borderBottomColor: colors.border }]}><Avatar author={person} size={44} /><View style={{ flex: 1 }}><Text style={[styles.personName, { color: colors.foreground }]}>{person.displayName}</Text><Text style={[styles.personMeta, { color: colors.mutedForeground }]}>@{person.username} · {person.communityName}</Text></View><Icon name="user-plus" size={19} color={colors.primary} /></Pressable>)}
       {!data?.communities?.length && !data?.people?.length ? <EmptyState icon="compass" title="Nothing here yet" body="Try a wider search, or come back when the room gets lively." /> : null}
       {!!data?.topics?.length && <><SectionLabel>Topics in motion</SectionLabel><View style={styles.topicWrap}>{data.topics.map((topic) => <Pressable key={topic} onPress={() => setQuery(topic)} style={[styles.topic, { backgroundColor: colors.secondary }]}><Text style={[styles.topicText, { color: colors.secondaryForeground }]}>#{topic}</Text></Pressable>)}</View></>}
     </Screen>

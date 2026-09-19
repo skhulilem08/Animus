@@ -1,10 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useGetMessages } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
-import { Avatar, EmptyState, ErrorState, Header, LoadingState, Screen, SearchField, relativeTime } from '@/components/AnimusUI';
+import { Avatar, EmptyState, ErrorState, Header, Icon, LoadingState, Screen, SearchField, relativeTime } from '@/components/AnimusUI';
 
 export default function MessagesScreen() {
   const colors = useColors();
@@ -16,10 +15,10 @@ export default function MessagesScreen() {
   const conversations = (messages.data?.conversations ?? []).filter((item) => item.person.displayName.toLowerCase().includes(search.toLowerCase()));
   return (
     <Screen>
-      <Header title="Messages" subtitle="Private, human, and unhurried." right={<Pressable onPress={() => router.push('/discover')}><Feather name="edit-3" size={21} color={colors.foreground} /></Pressable>} />
+      <Header title="Messages" subtitle="Private, human, and unhurried." right={<Pressable accessibilityRole="button" accessibilityLabel="New message" onPress={() => router.push('/discover')}><Icon name="text" size={21} color={colors.foreground} /></Pressable>} />
       <SearchField value={search} onChangeText={setSearch} placeholder="Search conversations" />
       {conversations.map((conversation) => <Pressable key={conversation.id} onPress={() => router.push({ pathname: '/conversation/[id]', params: { id: String(conversation.id) } })} style={({ pressed }) => [styles.row, { borderBottomColor: colors.border, opacity: pressed ? 0.65 : 1 }]}>
-        <Avatar author={conversation.person} size={51} /><View style={{ flex: 1, gap: 5 }}><View style={styles.rowTop}><Text style={[styles.name, { color: colors.foreground }]}>{conversation.person.displayName}</Text><Text style={[styles.time, { color: colors.mutedForeground }]}>{relativeTime(conversation.updatedAt)}</Text></View><Text numberOfLines={1} style={[styles.lastMessage, { color: colors.mutedForeground }]}>{conversation.lastMessage}</Text></View>{conversation.unreadCount > 0 ? <View style={[styles.unread, { backgroundColor: colors.primary }]}><Text style={[styles.unreadText, { color: colors.primaryForeground }]}>{conversation.unreadCount}</Text></View> : <Feather name="chevron-right" size={17} color={colors.mutedForeground} />}
+        <Avatar author={conversation.person} size={51} /><View style={{ flex: 1, gap: 5 }}><View style={styles.rowTop}><Text style={[styles.name, { color: colors.foreground }]}>{conversation.person.displayName}</Text><Text style={[styles.time, { color: colors.mutedForeground }]}>{relativeTime(conversation.updatedAt)}</Text></View><Text numberOfLines={1} style={[styles.lastMessage, { color: colors.mutedForeground }]}>{conversation.lastMessage}</Text></View>{conversation.unreadCount > 0 ? <View style={[styles.unread, { backgroundColor: colors.primary }]}><Text style={[styles.unreadText, { color: colors.primaryForeground }]}>{conversation.unreadCount}</Text></View> : <Icon name="message-circle" size={17} color={colors.mutedForeground} />}
       </Pressable>)}
       {!conversations.length ? <EmptyState icon="message-circle" title={search ? 'No matches' : 'A quiet inbox'} body={search ? 'Try another name.' : 'When a conversation starts, it will live here.'} /> : null}
     </Screen>

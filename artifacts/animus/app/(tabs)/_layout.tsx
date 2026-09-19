@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { Feather } from '@expo/vector-icons';
+import { Icon } from '@/components/AnimusUI';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
@@ -53,7 +53,7 @@ function ClassicTabLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        headerShown: true,
+        headerShown: false,
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: isIOS ? 'transparent' : colors.background,
@@ -87,7 +87,7 @@ function ClassicTabLayout() {
             isIOS ? (
               <SymbolView name="house" tintColor={color} size={24} />
             ) : (
-              <Feather name="home" size={22} color={color} />
+              <Icon name="home" size={22} color={String(color)} />
             ),
         }}
       />
@@ -95,28 +95,28 @@ function ClassicTabLayout() {
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="safari" tintColor={color} size={24} /> : <Feather name="compass" size={22} color={color} />,
+          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="safari" tintColor={color} size={24} /> : <Icon name="compass" size={22} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
           title: 'Create',
-          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="plus.circle" tintColor={color} size={24} /> : <Feather name="plus-circle" size={22} color={color} />,
+          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="plus.circle" tintColor={color} size={24} /> : <Icon name="plus" size={22} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="bubble.left" tintColor={color} size={24} /> : <Feather name="message-circle" size={22} color={color} />,
+          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="bubble.left" tintColor={color} size={24} /> : <Icon name="message-circle" size={22} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Feather name="user" size={22} color={color} />,
+          tabBarIcon: ({ color }) => isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Icon name="user" size={22} color={String(color)} />,
         }}
       />
     </Tabs>
@@ -124,7 +124,7 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
+  if (Platform.OS === 'ios' && isLiquidGlassAvailable()) {
     return <NativeTabLayout />;
   }
   return <ClassicTabLayout />;

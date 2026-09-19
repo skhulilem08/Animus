@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   linkButtonText: { fontSize: 15, fontWeight: '600' },
   caption: { fontSize: 15, lineHeight: 20, letterSpacing: -0.24, marginBottom: 12 },
   mediaFrame: { width: '100%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  clipFeedFrame: { aspectRatio: 9 / 14 },
+  clipFeedFrame: { aspectRatio: 9 / 13 },
   media: { width: '100%', height: '100%' },
   clipPlaceholder: { width: '100%', height: '100%', backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center' },
   postActions: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 40 },

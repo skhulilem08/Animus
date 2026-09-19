@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Text } from '@/components/GimmiUI';
-import { useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
-import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Icon } from '@/components/GimmiUI';
+import { useGetDiscover, useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
+import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Avatar, Icon } from '@/components/GimmiUI';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
+  const { data: discoverData } = useGetDiscover();
   const toggleLike = useTogglePostLike();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -75,6 +76,44 @@ export default function HomeFeed() {
     );
   };
 
+  const Stories = () => {
+    const people = discoverData?.people?.slice(0, 6) || [];
+    return (
+      <View style={[styles.storiesSection, { borderBottomColor: colors.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Create your story"
+            style={styles.storyItem}
+            onPress={() => router.push('/create')}
+          >
+            <View style={[styles.storyAvatarFrame, { borderColor: colors.border }]}>
+              <View style={[styles.addStory, { backgroundColor: colors.secondary }]}>
+                <Icon name="plus" size={19} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>Your story</Text>
+          </Pressable>
+          {people.map((person) => (
+            <Pressable
+              key={person.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${person.displayName} story`}
+              style={styles.storyItem}
+            >
+              <View style={[styles.storyAvatarFrame, { borderColor: colors.border }]}>
+                <Avatar author={person} size={48} showLive={false} />
+              </View>
+              <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>
+                {person.displayName.split(' ')[0]}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
   const regularPosts = (data?.posts || []).filter((post) => post.type !== 'video');
 
   if (isLoading) return <Screen><Header /><LoadingState label="Loading your feed" /></Screen>;
@@ -87,7 +126,7 @@ export default function HomeFeed() {
       <FlatList
         data={regularPosts}
         keyExtractor={(item) => String(item.id)}
-        ListHeaderComponent={<ClipsRail />}
+        ListHeaderComponent={<><Stories /><ClipsRail /></>}
         renderItem={({ item }) => (
           <PostCard
             post={item}
@@ -109,6 +148,12 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: -0.4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 0 },
+  storiesSection: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  storiesContent: { paddingHorizontal: 12, gap: 10 },
+  storyItem: { width: 56, alignItems: 'center', gap: 4 },
+  storyAvatarFrame: { width: 52, height: 52, borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  addStory: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  storyName: { width: 56, fontSize: 10, lineHeight: 13, fontWeight: '500', textAlign: 'center' },
   clipsSection: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   clipsHeading: { paddingHorizontal: 12, marginBottom: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clipsTitle: { fontSize: 15, lineHeight: 20, fontWeight: '600' },

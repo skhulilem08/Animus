@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Animated, PanResponder, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Icon, IconName } from '@/components/GimmiUI';
 import { Tabs } from 'expo-router';
@@ -27,6 +27,7 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
   const barWidth = width - outerInset * 2;
   const itemWidth = barWidth / state.routes.length;
   const translateX = useRef(new Animated.Value(state.index * itemWidth)).current;
+  const dragStart = useRef(state.index * itemWidth);
 
   useEffect(() => {
     Animated.spring(translateX, {
@@ -34,9 +35,61 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
       damping: 18,
       stiffness: 210,
       mass: 0.72,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, [itemWidth, state.index, translateX]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gesture) => (
+      Math.abs(gesture.dx) > 4 && Math.abs(gesture.dx) > Math.abs(gesture.dy)
+    ),
+    onPanResponderGrant: () => {
+      translateX.stopAnimation((value) => {
+        dragStart.current = value;
+      });
+    },
+    onPanResponderMove: (_, gesture) => {
+      const maximum = itemWidth * (state.routes.length - 1);
+      translateX.setValue(Math.max(0, Math.min(maximum, dragStart.current + gesture.dx)));
+    },
+    onPanResponderRelease: (_, gesture) => {
+      const targetIndex = Math.max(
+        0,
+        Math.min(
+          state.routes.length - 1,
+          Math.round((dragStart.current + gesture.dx) / itemWidth),
+        ),
+      );
+      const targetRoute = state.routes[targetIndex];
+
+      Animated.spring(translateX, {
+        toValue: targetIndex * itemWidth,
+        damping: 18,
+        stiffness: 210,
+        mass: 0.72,
+        useNativeDriver: false,
+      }).start();
+
+      if (targetIndex !== state.index) {
+        const event = navigation.emit({
+          type: 'tabPress',
+          target: targetRoute.key,
+          canPreventDefault: true,
+        });
+        if (!event.defaultPrevented) navigation.navigate(targetRoute.name, targetRoute.params);
+      }
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(translateX, {
+        toValue: state.index * itemWidth,
+        damping: 18,
+        stiffness: 210,
+        mass: 0.72,
+        useNativeDriver: false,
+      }).start();
+    },
+  }), [itemWidth, navigation, state.index, state.routes, translateX]);
 
   return (
     <View
@@ -46,7 +99,12 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
         { bottom: Math.max(insets.bottom, Platform.OS === 'web' ? 18 : 8) },
       ]}
     >
-      <BlurView intensity={88} tint="light" style={[styles.fallbackBar, { width: barWidth }]}>
+      <BlurView
+        intensity={88}
+        tint="light"
+        style={[styles.fallbackBar, { width: barWidth }]}
+        {...panResponder.panHandlers}
+      >
         <Animated.View
           pointerEvents="none"
           style={[
@@ -226,7 +284,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.62)',
     overflow: 'hidden',
-    zIndex: 4,
+    zIndex: 1,
   },
   selectionGlass: {
     borderRadius: 24,

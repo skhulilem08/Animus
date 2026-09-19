@@ -262,7 +262,7 @@ export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; 
 
   const validLink = extractedLink && /^https?:\/\/[^\s]+$/i.test(extractedLink) ? extractedLink : null;
   const openLink = async () => {
-    if (validLink) await openInAppBrowser(validLink);
+    if (validLink) await openInAppBrowser(validLink, theme.primary);
   };
   const sharePost = () => Share.share({
     message: [post.text || post.caption, validLink].filter(Boolean).join('\n'),

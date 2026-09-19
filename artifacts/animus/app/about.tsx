@@ -29,7 +29,7 @@ export default function AboutPage() {
         </Text>
         <Text
           accessibilityRole="link"
-          onPress={() => openInAppBrowser('https://icons8.com/icons/set/account-male--style-fluency--author-tulpahn')}
+          onPress={() => openInAppBrowser('https://icons8.com/icons/set/account-male--style-fluency--author-tulpahn', colors.primary)}
           style={[styles.credit, { color: colors.primary }]}
         >
           Default profile icon by Icons8

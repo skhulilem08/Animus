@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { FlatList, Platform, RefreshControl, View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Text } from '@/components/GimmiUI';
 import { useGetDiscover, useGetFeed, useTogglePostLike } from '@workspace/api-client-react';
 import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Avatar, Icon } from '@/components/GimmiUI';
@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
@@ -31,8 +32,8 @@ export default function HomeFeed() {
     );
   };
 
-  const Header = () => (
-    <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+  const HeaderContent = () => (
+    <>
       <View style={styles.headerLeft}>
         <Icon name="spark" size={23} color={colors.primary} strokeWidth={2.2} />
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Gimmi</Text>
@@ -41,8 +42,37 @@ export default function HomeFeed() {
         <IconButton name="search" size={24} onPress={() => router.push('/discover')} />
         <IconButton name="bell" size={24} badge={true} onPress={() => router.push('/notifications')} />
       </View>
-    </View>
+    </>
   );
+
+  const Header = () => {
+    const hasLiquidGlass = Platform.OS === 'ios' && isLiquidGlassAvailable();
+    const headerStyle = [
+      styles.header,
+      { top: insets.top },
+      !hasLiquidGlass && {
+        backgroundColor: colors.background,
+        borderBottomColor: colors.border,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+      },
+    ];
+
+    if (hasLiquidGlass) {
+      return (
+        <GlassView
+          glassEffectStyle="regular"
+          tintColor={colors.background}
+          colorScheme="light"
+          isInteractive={false}
+          style={headerStyle}
+        >
+          <HeaderContent />
+        </GlassView>
+      );
+    }
+
+    return <View style={headerStyle}><HeaderContent /></View>;
+  };
 
   const ClipsRail = () => {
     const clips = (data?.posts || [])
@@ -122,8 +152,8 @@ export default function HomeFeed() {
 
   const feedPosts = data?.posts || [];
 
-  if (isLoading) return <Screen><Header /><LoadingState label="Loading your feed" /></Screen>;
-  if (isError) return <Screen><Header /><ErrorState onRetry={refetch} /></Screen>;
+  if (isLoading) return <Screen useSafeArea={false}><View style={{ height: insets.top, backgroundColor: colors.background }} /><View style={styles.stateWithHeader}><LoadingState label="Loading your feed" /></View><Header /></Screen>;
+  if (isError) return <Screen useSafeArea={false}><View style={{ height: insets.top, backgroundColor: colors.background }} /><View style={styles.stateWithHeader}><ErrorState onRetry={refetch} /></View><Header /></Screen>;
 
   return (
     <Screen scroll={false} style={{ paddingTop: 0 }} useSafeArea={false}>
@@ -141,7 +171,7 @@ export default function HomeFeed() {
             onOpenClip={() => router.push({ pathname: '/clips', params: { initialId: String(item.id) } })}
           />
         )}
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={{ paddingTop: 44, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={<EmptyState icon="wind" title="It's quiet here" body="Follow people or join communities to see posts." action={() => router.push('/discover')} actionLabel="Discover People" />}
@@ -151,7 +181,7 @@ export default function HomeFeed() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, height: 44 },
+  header: { position: 'absolute', left: 0, right: 0, zIndex: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, height: 44 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: -0.4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 0 },
@@ -171,4 +201,5 @@ const styles = StyleSheet.create({
   clipMeta: { gap: 1 },
   clipAuthor: { color: '#FFFFFF', fontSize: 12, lineHeight: 15, fontWeight: '600' },
   clipCommunity: { color: '#C7C7CC', fontSize: 10, lineHeight: 13 },
+  stateWithHeader: { flex: 1, paddingTop: 44 },
 });

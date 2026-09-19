@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { ActivityIndicator, Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text as RNText, TextInput, View, Platform, StyleProp, ViewStyle, TextStyle, TextProps } from 'react-native';
+import React, { ReactNode, useState } from 'react';
+import { ActivityIndicator, Image, ImageSourcePropType, Linking, Pressable, ScrollView, Share, StyleSheet, Text as RNText, TextInput, View, Platform, StyleProp, ViewStyle, TextProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
@@ -34,6 +34,7 @@ import {
   VideoCameraOff,
   Microphone,
   MicrophoneMute,
+  Spark,
 } from 'iconoir-react-native';
 import { Post, Author, Community } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
@@ -41,6 +42,7 @@ import { getCommunityTheme } from '@/constants/communityThemes';
 
 const blueMedia = require('../assets/images/feed-blue.png') as ImageSourcePropType;
 const saffronMedia = require('../assets/images/feed-saffron.png') as ImageSourcePropType;
+const defaultProfile = require('../assets/images/default-profile.png') as ImageSourcePropType;
 
 const iconMap = {
   'arrow-up': ArrowUp,
@@ -75,6 +77,7 @@ const iconMap = {
   mic: Microphone,
   'mic-off': MicrophoneMute,
   'phone-off': Xmark,
+  spark: Spark,
 } as const;
 
 export type IconName = keyof typeof iconMap;
@@ -208,10 +211,17 @@ export function Button({ label, onPress, variant = 'primary', style, shape = 'sq
 
 export function Avatar({ author, size = 44 }: { author?: Author | null; size?: number }) {
   const colors = useColors();
-  const initials = (author?.displayName || 'A').split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+  const hasUploadedAvatar = Boolean(
+    author?.avatar && /^https?:\/\//i.test(author.avatar),
+  );
   return (
-    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: author?.communityColor || colors.accent }]}>
-      {author?.avatar?.startsWith('http') ? <Image source={{ uri: author.avatar }} style={{ width: size, height: size, borderRadius: size / 2 }} /> : <Text style={[styles.avatarText, { color: colors.accentForeground, fontSize: size * 0.32 }]}>{initials}</Text>}
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.secondary }]}>
+      <Image
+        accessibilityLabel={hasUploadedAvatar ? `${author?.displayName} profile photo` : 'Default profile photo'}
+        source={hasUploadedAvatar ? { uri: author!.avatar } : defaultProfile}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        resizeMode="cover"
+      />
       {author?.isLive ? <View style={[styles.liveDot, { backgroundColor: colors.destructive, borderColor: colors.card }]} /> : null}
     </View>
   );
@@ -238,32 +248,32 @@ const urlRegex = /(https?:\/\/[^\s]+)/g;
 export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () => void; onComment?: () => void }) {
   const colors = useColors();
   const theme = getCommunityTheme({ name: post.author.communityName, slug: '', color: post.author.communityColor });
-  const localMedia = post.id % 2 === 0 ? blueMedia : saffronMedia;
+  const [saved, setSaved] = useState(false);
+  const localMedia = post.mediaUrl?.includes('saffron') ? saffronMedia : blueMedia;
   
   let textContent = post.text || '';
-  let extractedLink = post.link || null;
-  
-  if (!extractedLink) {
-    const linkMatch = textContent.match(urlRegex);
-    if (linkMatch) {
-      extractedLink = linkMatch[0];
-      textContent = textContent.replace(extractedLink, '').trim();
-    }
-  }
+  const linksInText = textContent.match(urlRegex) || [];
+  const extractedLink = post.link || linksInText[0] || null;
+  textContent = textContent.replace(urlRegex, '').replace(/\s{2,}/g, ' ').trim();
 
-  // Progressive text size for text-only posts
-  let textSize = 24;
-  let textLineHeight = 32;
-  if (textContent.length > 250) {
-    textSize = 15;
-    textLineHeight = 20;
-  } else if (textContent.length > 150) {
-    textSize = 17;
-    textLineHeight = 22;
-  } else if (textContent.length > 80) {
-    textSize = 20;
-    textLineHeight = 26;
-  }
+  const validLink = extractedLink && /^https?:\/\/[^\s]+$/i.test(extractedLink) ? extractedLink : null;
+  const openLink = async () => {
+    if (validLink && await Linking.canOpenURL(validLink)) {
+      await Linking.openURL(validLink);
+    }
+  };
+  const sharePost = () => Share.share({
+    message: [post.text || post.caption, validLink].filter(Boolean).join('\n'),
+  });
+
+  const textLength = Math.min(textContent.length, 500);
+  const textScale =
+    textLength <= 60 ? { fontSize: 28, lineHeight: 35 } :
+    textLength <= 120 ? { fontSize: 24, lineHeight: 31 } :
+    textLength <= 200 ? { fontSize: 21, lineHeight: 27 } :
+    textLength <= 300 ? { fontSize: 18, lineHeight: 24 } :
+    textLength <= 400 ? { fontSize: 16, lineHeight: 21 } :
+    { fontSize: 14, lineHeight: 18 };
 
   return (
     <View style={[styles.postCard, { borderBottomColor: colors.border }]}>
@@ -283,33 +293,33 @@ export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () 
       </View>
       
       {post.type === 'text' ? (
-        <View style={[styles.textPostFrame, { backgroundColor: theme.soft }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open text post comments" onPress={onComment} style={[styles.textPostFrame, { backgroundColor: colors.groupedBackground, borderColor: colors.border }]}>
           <Text 
-            style={[styles.postText, { color: theme.foreground, fontSize: textSize, lineHeight: textLineHeight, textAlign: 'center' }]}
+            style={[styles.textPostText, { color: colors.foreground, ...textScale }]}
             selectable
+            adjustsFontSizeToFit
+            minimumFontScale={0.82}
           >
-            {textContent}
+            {textContent.slice(0, 500)}
           </Text>
-          {extractedLink && (
-            <Pressable style={[styles.linkButton, { borderColor: theme.primary }]} onPress={() => {}}>
+          {validLink && (
+            <Pressable accessibilityRole="link" accessibilityLabel={`Open ${new URL(validLink).hostname}`} style={[styles.linkButton, { borderColor: theme.primary }]} onPress={openLink}>
               <Icon name="compass" size={16} color={theme.primary} />
-              <Text style={[styles.linkButtonText, { color: theme.primary }]} numberOfLines={1}>
-                {extractedLink.replace(/^https?:\/\//, '')}
-              </Text>
+              <Text style={[styles.linkButtonText, { color: theme.primary }]}>Open link</Text>
             </Pressable>
           )}
-        </View>
+        </Pressable>
       ) : (
         <>
-          {post.text ? <Text style={[styles.postText, { color: colors.foreground }]} selectable>{post.text}</Text> : null}
-          <View style={[styles.mediaFrame, { backgroundColor: colors.muted }]}>
-            <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="cover" style={styles.media} />
+          {post.text ? <Pressable onPress={onComment}><Text style={[styles.postText, { color: colors.foreground }]} selectable>{post.text}</Text></Pressable> : null}
+          <Pressable accessibilityRole="button" accessibilityLabel="Open post comments" onPress={onComment} style={[styles.mediaFrame, { backgroundColor: colors.muted }]}>
+            <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="contain" style={styles.media} />
             <View style={[styles.mediaType, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
               <Icon name={post.type === 'video' ? 'play' : 'image'} size={13} color="#fff" />
               <Text style={[styles.mediaTypeText, { color: '#fff' }]}>{post.type === 'video' ? 'Clip' : 'Image'}</Text>
             </View>
-          </View>
-          {post.caption ? <Text style={[styles.caption, { color: colors.foreground }]} selectable>{post.caption}</Text> : null}
+          </Pressable>
+          {post.caption ? <Pressable onPress={onComment}><Text style={[styles.caption, { color: colors.foreground }]} selectable>{post.caption}</Text></Pressable> : null}
         </>
       )}
       
@@ -322,13 +332,13 @@ export function PostCard({ post, onLike, onComment }: { post: Post; onLike?: () 
           <Icon name="message-circle" size={20} color={colors.foreground} />
           <Text style={[styles.actionText, { color: colors.mutedForeground }]}>{post.comments}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Share post" style={({ pressed }) => [styles.action, { opacity: pressed ? 0.55 : 1 }]} hitSlop={8}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Share post" onPress={sharePost} style={({ pressed }) => [styles.action, { opacity: pressed ? 0.55 : 1 }]} hitSlop={8}>
           <Icon name="send" size={20} color={colors.foreground} />
           <Text style={[styles.actionText, { color: colors.mutedForeground }]}>{post.shares}</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Save post" hitSlop={8}>
-          <Icon name="bookmark" size={20} color={colors.foreground} />
+        <Pressable accessibilityRole="button" accessibilityLabel={saved ? 'Remove saved post' : 'Save post'} accessibilityState={{ selected: saved }} onPress={() => setSaved((value) => !value)} style={styles.iconTouchTarget}>
+          <Icon name="bookmark" size={20} color={saved ? colors.primary : colors.foreground} />
         </Pressable>
       </View>
     </View>
@@ -384,7 +394,6 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 15, fontWeight: '600', letterSpacing: -0.24 },
   badgeDot: { position: 'absolute', top: 8, right: 8, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
   avatar: { alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 },
-  avatarText: { fontWeight: '600' },
   liveDot: { position: 'absolute', right: -2, bottom: -2, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   pill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999, alignSelf: 'flex-start' },
   pillText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.06 },
@@ -393,23 +402,25 @@ const styles = StyleSheet.create({
   sectionAction: { fontSize: 14, fontWeight: '500' },
   search: { height: 44, borderRadius: 9999, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8, marginBottom: 24 },
   searchInput: { flex: 1, fontSize: 16, paddingVertical: 10, letterSpacing: -0.32 },
-  postCard: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 16, marginBottom: 0, paddingHorizontal: 16, marginHorizontal: -16 },
-  postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  postCard: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 12 },
+  postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 9 },
   authorName: { fontSize: 15, fontWeight: '600', letterSpacing: -0.24 },
   metaLine: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   meta: { fontSize: 13, letterSpacing: -0.08 },
   postText: { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.24, marginBottom: 12 },
-  textPostFrame: { width: '100%', aspectRatio: 1, borderRadius: 12, padding: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  linkButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 9999, paddingVertical: 10, paddingHorizontal: 16, marginTop: 16, width: '100%', justifyContent: 'center' },
+  textPostFrame: { width: '100%', aspectRatio: 1, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, padding: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 10, overflow: 'hidden' },
+  textPostText: { width: '100%', flexShrink: 1, fontWeight: '500', letterSpacing: -0.32, textAlign: 'center', marginBottom: 0 },
+  linkButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 12, minHeight: 44, paddingHorizontal: 16, marginTop: 16, width: '100%', justifyContent: 'center' },
   linkButtonText: { fontSize: 15, fontWeight: '600' },
   caption: { fontSize: 15, lineHeight: 20, letterSpacing: -0.24, marginBottom: 12 },
-  mediaFrame: { width: '100%', aspectRatio: 1.33, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  mediaFrame: { width: '100%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   media: { width: '100%', height: '100%' },
   mediaType: { position: 'absolute', top: 12, right: 12, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 6 },
   mediaTypeText: { fontSize: 12, fontWeight: '600' },
-  postActions: { flexDirection: 'row', alignItems: 'center', gap: 24, marginTop: 4 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 32 },
+  postActions: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 40 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 5, minWidth: 44, height: 40 },
   actionText: { fontSize: 14, fontWeight: '500' },
+  iconTouchTarget: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -12 },
   state: { alignItems: 'center', justifyContent: 'center', minHeight: 300, paddingHorizontal: 32, gap: 12 },
   stateTitle: { fontSize: 20, fontWeight: '700', marginTop: 8, letterSpacing: 0.35 },
   stateBody: { fontSize: 16, lineHeight: 21, textAlign: 'center', letterSpacing: -0.32 },

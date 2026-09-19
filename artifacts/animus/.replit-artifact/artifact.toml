@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "Animus"
+title = "Gimmi"
 description = "A community-centered social mobile app where people share text, images, and clips, discover communities, message each other, and connect across community boundaries."
 version = "1.0.0"
 id = "artifacts/animus"

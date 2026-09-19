@@ -74,10 +74,25 @@ export async function seedGimmi() {
     FROM (VALUES
       ('Theo Park', 'theo.p', 'TP', 'saffron-club', true, true, 8920, 241),
       ('Nia Sol', 'nia.sol', 'NS', 'moss-and-stone', false, false, 2180, 614),
-      ('Jon Bell', 'jonbell', 'JB', 'night-shift', true, false, 1640, 198)
+      ('Jon Bell', 'jonbell', 'JB', 'night-shift', true, false, 1640, 198),
+      ('Maya Chen', 'maya.c', '', 'ladybug', false, false, 4380, 326),
+      ('Noah Vale', 'noah.v', '', 'cat', false, false, 3910, 284)
     ) AS seed(display_name, username, avatar, slug, is_live, is_premium, follower_count, following_count)
     JOIN communities c ON c.slug = seed.slug
     ON CONFLICT (username) DO NOTHING
+  `);
+  await tx.execute(sql`
+    INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
+    SELECT u.id, 'text',
+      'Courage can start with one small choice. What is one good thing you are doing for yourself or your community today?',
+      '', '', 'https://gimmi.app/community/ladybug', 284, 37, 18
+    FROM users u
+    WHERE u.username = 'maya.c'
+      AND NOT EXISTS (
+        SELECT 1 FROM posts
+        WHERE author_id = u.id
+          AND type = 'text'
+      )
   `);
   await tx.execute(sql`
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)

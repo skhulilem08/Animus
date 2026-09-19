@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { Linking, View, StyleSheet } from 'react-native';
 import { Text } from '@/components/GimmiUI';
 import { Screen, Header, IconButton } from '@/components/GimmiUI';
 import { router } from 'expo-router';
@@ -26,6 +26,13 @@ export default function AboutPage() {
         <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
           Not affiliated with or endorsed by Miraculous or its rights holders.
         </Text>
+        <Text
+          accessibilityRole="link"
+          onPress={() => Linking.openURL('https://icons8.com/icons/set/account-male--style-fluency--author-tulpahn')}
+          style={[styles.credit, { color: colors.primary }]}
+        >
+          Default profile icon by Icons8
+        </Text>
       </View>
     </Screen>
   );
@@ -38,4 +45,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
   body: { fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: 32 },
   disclaimer: { fontSize: 12, textAlign: 'center', opacity: 0.6 },
+  credit: { fontSize: 12, textAlign: 'center', marginTop: 12 },
 });

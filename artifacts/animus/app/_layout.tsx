@@ -19,7 +19,16 @@ import {
 if (Platform.OS !== 'web') {
   SplashScreen.preventAutoHideAsync();
 }
-setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
+
+const apiDomain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
+if (Platform.OS === 'web') {
+  setBaseUrl(null);
+} else if (apiDomain) {
+  setBaseUrl(`https://${apiDomain}`);
+} else {
+  console.error('EXPO_PUBLIC_DOMAIN is required for native API requests.');
+  setBaseUrl(null);
+}
 
 const queryClient = new QueryClient();
 

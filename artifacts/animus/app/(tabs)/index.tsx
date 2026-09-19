@@ -5,12 +5,16 @@ import { useGetFeed, useTogglePostLike, useGetDiscover } from '@workspace/api-cl
 import { Screen, PostCard, LoadingState, ErrorState, EmptyState, IconButton, Avatar, Icon } from '@/components/GimmiUI';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
   const { data: discoverData } = useGetDiscover();
   const toggleLike = useTogglePostLike();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -20,15 +24,16 @@ export default function HomeFeed() {
   }, [refetch]);
 
   const handleLike = (postId: number) => {
-    toggleLike.mutate({ postId, data: { viewerId: 1 } });
+    toggleLike.mutate(
+      { postId, data: { viewerId: 1 } },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/feed'] }) },
+    );
   };
 
   const Header = () => (
-    <View style={[styles.header, { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+    <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
       <View style={styles.headerLeft}>
-        <View style={{ width: 28, height: 28, backgroundColor: colors.tint, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>G</Text>
-        </View>
+        <Icon name="spark" size={23} color={colors.primary} strokeWidth={2.2} />
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Gimmi</Text>
       </View>
       <View style={styles.headerRight}>
@@ -43,21 +48,21 @@ export default function HomeFeed() {
     return (
       <View style={[styles.storiesContainer, { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContent}>
-          <View style={styles.storyItem}>
-            <View style={styles.storyRing}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Create your story" style={styles.storyItem} onPress={() => router.push('/create')}>
+            <View style={[styles.storyRing, { borderColor: colors.border }]}>
               <View style={[styles.addStory, { backgroundColor: colors.secondary }]}>
-                <Icon name="plus" size={24} color={colors.primary} />
+                <Icon name="plus" size={20} color={colors.primary} />
               </View>
             </View>
             <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>Your story</Text>
-          </View>
+          </Pressable>
           {people.map(person => (
-            <View key={person.id} style={styles.storyItem}>
+            <Pressable key={person.id} accessibilityRole="button" accessibilityLabel={`${person.displayName}${person.isLive ? ', live now' : ''}`} style={styles.storyItem}>
               <View style={[styles.storyRing, { borderColor: person.isLive ? colors.destructive : colors.border }]}>
-                <Avatar author={person} size={58} />
+                <Avatar author={person} size={46} />
               </View>
               <Text style={[styles.storyName, { color: colors.foreground }]} numberOfLines={1}>{person.displayName.split(' ')[0]}</Text>
-            </View>
+            </Pressable>
           ))}
         </ScrollView>
       </View>
@@ -69,7 +74,7 @@ export default function HomeFeed() {
 
   return (
     <Screen scroll={false} style={{ paddingTop: 0 }} useSafeArea={false}>
-      <View style={{ height: 44 }} />
+      <View style={{ height: insets.top, backgroundColor: colors.background }} />
       <Header />
       <FlatList
         data={data?.posts || []}
@@ -82,7 +87,7 @@ export default function HomeFeed() {
             onComment={() => router.push(`/post/${item.id}`)}
           />
         )}
-        contentContainerStyle={{ paddingBottom: 112 }}
+        contentContainerStyle={{ paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={<EmptyState icon="wind" title="It's quiet here" body="Follow people or join communities to see posts." action={() => router.push('/discover')} actionLabel="Discover People" />}
@@ -92,14 +97,14 @@ export default function HomeFeed() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 44 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, height: 44 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: -0.4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 0 },
-  storiesContainer: { paddingVertical: 16 },
-  storiesContent: { paddingHorizontal: 16, gap: 16 },
-  storyItem: { alignItems: 'center', gap: 6, width: 68 },
-  addStory: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center' },
-  storyRing: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
-  storyName: { fontSize: 13, fontWeight: '500' }
+  storiesContainer: { paddingVertical: 10 },
+  storiesContent: { paddingHorizontal: 12, gap: 10 },
+  storyItem: { alignItems: 'center', gap: 4, width: 54 },
+  addStory: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  storyRing: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+  storyName: { fontSize: 10, lineHeight: 13, fontWeight: '500' }
 });

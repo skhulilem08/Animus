@@ -76,7 +76,7 @@ export default function Discover() {
               <SectionLabel action="See all">People</SectionLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingHorizontal: 16 }}>
                 {data.people.map((p) => (
-                  <Pressable key={p.id} style={styles.personCard} onPress={() => {}}>
+                  <Pressable key={p.id} style={styles.personCard} onPress={() => router.push(`/profile/${p.id}`)}>
                     <Avatar author={p} size={64} />
                     <Text style={[styles.pName, { color: colors.foreground }]} numberOfLines={1}>{p.displayName}</Text>
                     <CommunityPill name={p.communityName} color={p.communityColor} />

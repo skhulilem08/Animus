@@ -35,12 +35,16 @@ import {
   Microphone,
   MicrophoneMute,
   Spark,
+  SunLight,
+  Palette,
+  HalfMoon,
 } from 'iconoir-react-native';
 import { Bookmark as BookmarkSolid, Heart as HeartSolid } from 'iconoir-react-native/solid';
 import { Post, Author, Community } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { getCommunityTheme } from '@/constants/communityThemes';
 import { openInAppBrowser } from '@/utils/openInAppBrowser';
+import { router } from 'expo-router';
 
 const blueMedia = require('../assets/images/feed-blue.png') as ImageSourcePropType;
 const saffronMedia = require('../assets/images/feed-saffron.png') as ImageSourcePropType;
@@ -82,6 +86,9 @@ const iconMap = {
   'mic-off': MicrophoneMute,
   'phone-off': Xmark,
   spark: Spark,
+  adjust: SunLight,
+  filters: Palette,
+  bw: HalfMoon,
 } as const;
 
 export type IconName = keyof typeof iconMap;
@@ -249,11 +256,41 @@ export function SearchField({ value, onChangeText, placeholder = 'Search Gimmi' 
 
 const urlRegex = /(https?:\/\/[^\s]+)/g;
 
+// Clamp how tall/wide a post's media frame can go so one extreme image
+// doesn't blow out the feed. Square media (ratio 1) renders exactly as
+// captured; anything outside this band letterboxes at the clamp edge.
+const MIN_MEDIA_RATIO = 4 / 5;   // tallest: portrait, matches Instagram's own clamp
+const MAX_MEDIA_RATIO = 1.91;    // widest: landscape
+
 export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; onLike?: () => void; onComment?: () => void; onOpenClip?: () => void }) {
   const colors = useColors();
   const theme = getCommunityTheme({ name: post.author.communityName, slug: '', color: post.author.communityColor });
   const [saved, setSaved] = useState(false);
+  const openAuthorProfile = () => router.push(`/profile/${post.author.id}`);
   const localMedia = post.mediaUrl?.includes('saffron') ? saffronMedia : blueMedia;
+  const isRemoteMedia = !!post.mediaUrl && !post.mediaUrl.includes('images.local');
+  const mediaSource: ImageSourcePropType = isRemoteMedia ? { uri: post.mediaUrl } : localMedia;
+
+  // Non-square images should render at their natural aspect ratio (per the
+  // "Post with Non-Square Media" reference), not be squeezed into a fixed
+  // square frame. We don't have width/height from the API, so measure it
+  // client-side once the source resolves. Falls back to square while loading.
+  const [mediaRatio, setMediaRatio] = useState(1);
+  React.useEffect(() => {
+    if (post.type !== 'image') return;
+    let cancelled = false;
+    const applyRatio = (w: number, h: number) => {
+      if (cancelled || !w || !h) return;
+      setMediaRatio(Math.min(MAX_MEDIA_RATIO, Math.max(MIN_MEDIA_RATIO, w / h)));
+    };
+    if (isRemoteMedia) {
+      Image.getSize(post.mediaUrl!, applyRatio, () => {});
+    } else {
+      const resolved = Image.resolveAssetSource(localMedia);
+      applyRatio(resolved.width, resolved.height);
+    }
+    return () => { cancelled = true; };
+  }, [post.type, post.mediaUrl, isRemoteMedia]);
   
   let textContent = post.text || '';
   const linksInText = textContent.match(urlRegex) || [];
@@ -280,10 +317,14 @@ export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; 
   return (
     <View style={[styles.postCard, { borderBottomColor: colors.border }]}>
       <View style={styles.postHeader}>
-        <Avatar author={post.author} size={36} />
+        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${post.author.displayName}'s profile`} onPress={openAuthorProfile}>
+          <Avatar author={post.author} size={36} />
+        </Pressable>
         <View style={{ flex: 1, marginLeft: 10, justifyContent: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-             <Text style={[styles.authorName, { color: colors.foreground }]} numberOfLines={1}>{post.author.displayName}</Text>
+             <Pressable onPress={openAuthorProfile} style={{ flexShrink: 1 }}>
+               <Text style={[styles.authorName, { color: colors.foreground }]} numberOfLines={1}>{post.author.displayName}</Text>
+             </Pressable>
              <Pressable accessibilityRole="button" accessibilityLabel="More options" hitSlop={12}>
                 <Icon name="more-horizontal" size={18} color={colors.mutedForeground} />
              </Pressable>
@@ -318,14 +359,20 @@ export function PostCard({ post, onLike, onComment, onOpenClip }: { post: Post; 
             accessibilityRole="button"
             accessibilityLabel={post.type === 'video' ? 'Open full-screen clip' : 'Open post comments'}
             onPress={post.type === 'video' ? onOpenClip : onComment}
-            style={[styles.mediaFrame, post.type === 'video' ? styles.clipFeedFrame : null, { backgroundColor: colors.muted }]}
+            style={[
+              styles.mediaFrame,
+              post.type === 'video' ? styles.clipFeedFrame : { aspectRatio: mediaRatio },
+              { backgroundColor: colors.muted },
+            ]}
           >
             {post.type === 'video' && !post.mediaUrl ? (
               <View style={styles.clipPlaceholder}>
                 <Icon name="play" size={30} color="#FFFFFF" />
               </View>
             ) : (
-              <Image source={post.mediaUrl && !post.mediaUrl.includes('images.local') ? { uri: post.mediaUrl } : localMedia} resizeMode="contain" style={styles.media} />
+              // contain, not cover: the spec is explicit that media is never
+              // cropped, even at the clamp edges — "cover" would violate that.
+              <Image source={mediaSource} resizeMode="contain" style={styles.media} />
             )}
           </Pressable>
           {post.caption ? <Pressable onPress={onComment}><Text style={[styles.caption, { color: colors.foreground }]} selectable>{post.caption}</Text></Pressable> : null}

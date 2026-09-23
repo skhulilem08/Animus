@@ -5,18 +5,22 @@
 const colors = {
   light: {
     text: '#000000',
-    tint: '#FF3B30',
+    // Default/fallback tint only — components read the viewer's live community
+    // color via useColors()/useCommunityColor(), not this value directly.
+    // Kept as systemBlue (Apple's default tint) so it never collides with
+    // `destructive`/`like`, which are reserved for systemRed semantics.
+    tint: '#007AFF',
     background: '#FFFFFF',
     foreground: '#000000',
     card: '#FFFFFF',
     cardForeground: '#000000',
-    primary: '#FF3B30',
+    primary: '#007AFF',
     primaryForeground: '#FFFFFF',
     secondary: '#F2F2F7',
     secondaryForeground: '#000000',
     muted: '#F2F2F7',
     mutedForeground: '#8E8E93',
-    accent: '#FF3B30',
+    accent: '#007AFF',
     accentForeground: '#FFFFFF',
     like: '#FF3B30',
     destructive: '#FF3B30',

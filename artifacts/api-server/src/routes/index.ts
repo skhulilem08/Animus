@@ -1,10 +1,10 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import animusRouter from "./animus";
+import gimmiRouter from "./gimmi";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(animusRouter);
+router.use(gimmiRouter);
 
 export default router;

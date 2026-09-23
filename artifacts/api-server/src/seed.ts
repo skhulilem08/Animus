@@ -110,8 +110,8 @@ export async function seedGimmi() {
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
     SELECT u.id, seed.type, seed.text, seed.caption, seed.media_url, seed.link, seed.likes, seed.comments, seed.shares
     FROM (VALUES
-      ('theo.p', 'image', '', 'A little more color for the week ahead.', 'https://images.local/animus-feed-saffron.png', NULL, 642, 46, 24),
-      ('nia.sol', 'image', '', 'Found this light on the walk home.', 'https://images.local/animus-feed-blue.png', NULL, 311, 22, 12),
+      ('theo.p', 'image', '', 'A little more color for the week ahead.', 'https://images.local/gimmi-feed-saffron.png', NULL, 642, 46, 24),
+      ('nia.sol', 'image', '', 'Found this light on the walk home.', 'https://images.local/gimmi-feed-blue.png', NULL, 311, 22, 12),
       ('jonbell', 'video', '', 'Live from the late shift.', '', NULL, 127, 34, 7)
     ) AS seed(username, type, text, caption, media_url, link, likes, comments, shares)
     JOIN users u ON u.username = seed.username

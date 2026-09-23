@@ -97,6 +97,29 @@ paths:
                 $ref: "#/components/schemas/CommunityDetail"
         "404":
           description: Community not found
+  /upload:
+    post:
+      operationId: uploadMedia
+      tags: [posts]
+      summary: Upload an image or video file and get back a servable URL
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Uploaded file's servable URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadMediaResponse"
   /posts:
     post:
       operationId: createPost
@@ -481,6 +504,11 @@ components:
         posts:
           type: array
           items: { $ref: "#/components/schemas/Post" }
+    UploadMediaResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
     CreatePostRequest:
       type: object
       required: [authorId, type]

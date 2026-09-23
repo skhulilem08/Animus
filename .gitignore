@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# uploaded media (local-disk storage for the upload endpoint — not durable, see middlewares/upload.ts)
+artifacts/api-server/uploads/

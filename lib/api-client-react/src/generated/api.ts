@@ -47,6 +47,8 @@ import type {
   Post,
   Profile,
   SendMessageRequest,
+  UploadMediaBody,
+  UploadMediaResponse,
   ViewerRequest
 } from './api.schemas';
 
@@ -411,6 +413,82 @@ export function useGetCommunity<TData = Awaited<ReturnType<typeof getCommunity>>
 
 
 
+
+export const getUploadMediaUrl = () => {
+
+
+
+
+  return `/api/upload`
+}
+
+/**
+ * @summary Upload an image or video file and get back a servable URL
+ */
+export const uploadMedia = async (uploadMediaBody: UploadMediaBody, options?: Parameters<typeof customFetch>[1]): Promise<UploadMediaResponse> => {
+    const formData = new FormData();
+formData.append(`file`, uploadMediaBody.file);
+
+  return customFetch<UploadMediaResponse>(getUploadMediaUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getUploadMediaMutationKey = () => ['uploadMedia'] as const;
+
+export const getUploadMediaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMedia>>, TError,UploadMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadMedia>>, TError,UploadMediaMutationVariables, TContext> => {
+
+const mutationKey = getUploadMediaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadMedia>>, UploadMediaMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadMedia(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadMediaMutationResult = NonNullable<Awaited<ReturnType<typeof uploadMedia>>>
+    export type UploadMediaMutationBody = BodyType<UploadMediaBody>
+    export type UploadMediaMutationError = ErrorType<unknown>
+    export type UploadMediaMutationVariables = {data: BodyType<UploadMediaBody>}
+
+    /**
+ * @summary Upload an image or video file and get back a servable URL
+ */
+export const useUploadMedia = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMedia>>, TError,UploadMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadMedia>>,
+        TError,
+        UploadMediaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUploadMediaMutationOptions(options));
+    }
 
 export const getCreatePostUrl = () => {
 

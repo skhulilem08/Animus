@@ -153,6 +153,18 @@ export const GetCommunityResponse = zod.object({
 
 
 /**
+ * @summary Upload an image or video file and get back a servable URL
+ */
+export const UploadMediaBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const UploadMediaResponse = zod.object({
+  "url": zod.string()
+})
+
+
+/**
  * @summary Create a text, image, or video post
  */
 export const createPostBodyTextMax = 500;

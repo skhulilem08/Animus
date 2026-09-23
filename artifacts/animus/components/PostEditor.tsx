@@ -7,13 +7,15 @@ import Animated, { useAnimatedStyle, useSharedValue, runOnJS } from 'react-nativ
 import Svg, { Path } from 'react-native-svg';
 
 /**
- * Everything in this file is a LIVE PREVIEW layer only. There's no image-
- * processing library in this project (no expo-image-manipulator, no Skia) and
- * no upload endpoint on the backend, so none of this — filters, draw strokes,
- * text — gets rasterized into the final media file. What ships to the server
- * today is still the original picked photo/video. Wiring real compositing
- * needs either a native image-manipulation dependency + an /upload endpoint,
- * or a server-side compositing step. Flagging clearly rather than pretending
+ * Everything in this file is a LIVE PREVIEW layer only. There IS an upload
+ * endpoint now (POST /api/upload, see create/image.tsx and create/video.tsx)
+ * so the original picked photo/video reaches the server and is visible to
+ * everyone — but filters, draw strokes, and text overlays are still not
+ * rasterized into that uploaded file. There's no image-processing library in
+ * this project (no expo-image-manipulator, no Skia), so what ships to the
+ * server is the untouched original. Wiring real compositing needs either a
+ * native image-manipulation dependency + client-side rendering, or a
+ * server-side compositing step. Flagging clearly rather than pretending
  * "Next" bakes these in.
  */
 

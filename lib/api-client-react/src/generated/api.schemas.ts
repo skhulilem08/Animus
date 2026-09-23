@@ -132,6 +132,10 @@ export interface CommunityDetail {
   posts: Post[];
 }
 
+export interface UploadMediaResponse {
+  url: string;
+}
+
 export type CreatePostRequestType = typeof CreatePostRequestType[keyof typeof CreatePostRequestType];
 
 
@@ -230,6 +234,10 @@ query?: string;
 
 export type GetCommunityParams = {
 viewerId?: number;
+};
+
+export type UploadMediaBody = {
+  file: Blob | File;
 };
 
 export type GetPostParams = {

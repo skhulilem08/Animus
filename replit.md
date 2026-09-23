@@ -1,6 +1,6 @@
-# Animus
+# Gimmi
 
-Animus is a community-centered native mobile app for sharing thoughts, images, clips, and private conversations across community boundaries.
+Gimmi is a community-centered native mobile app for sharing thoughts, images, clips, and private conversations across community boundaries.
 
 ## Run & Operate
 
@@ -45,7 +45,7 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-- The user wants Animus to follow Apple HIG and use Iconoir icons.
+- The user wants Gimmi to follow Apple HIG and use Iconoir icons.
 
 ## Gotchas
 

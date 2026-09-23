@@ -41,4 +41,6 @@ export * from './post';
 export * from './postType';
 export * from './profile';
 export * from './sendMessageRequest';
+export * from './uploadMediaBody';
+export * from './uploadMediaResponse';
 export * from './viewerRequest';

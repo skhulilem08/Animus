@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import {
   CreatePostBody,
   CreatePostResponse,
+  UploadMediaResponse,
   GetCommunityResponse,
   GetDiscoverResponse,
   GetFeedResponse,
@@ -26,6 +27,7 @@ import {
   TogglePostLikeResponse,
 } from "@workspace/api-zod";
 import { db } from "@workspace/db";
+import { uploadMedia } from "../middlewares/upload";
 
 const router: IRouter = Router();
 type Row = Record<string, unknown>;
@@ -370,6 +372,22 @@ router.post("/communities/:communityId/membership", async (req, res) => {
   } catch (error) {
     req.log.error({ err: error }, "Failed to update community membership");
     res.status(400).json({ message: error instanceof Error ? error.message : "Unable to update membership" });
+  }
+});
+
+router.post("/upload", uploadMedia.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: "No file uploaded" });
+      return;
+    }
+    const publicBase = `${req.protocol}://${req.get("host")}`;
+    const url = `${publicBase}/uploads/${req.file.filename}`;
+    const data = UploadMediaResponse.parse({ url });
+    res.status(201).json(data);
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to upload media");
+    res.status(400).json({ message: "Unable to upload file" });
   }
 });
 

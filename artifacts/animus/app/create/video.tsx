@@ -9,7 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCreatePost, useGetFeed } from '@workspace/api-client-react';
+import { useCreatePost, useGetFeed, useUploadMedia } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Panel = 'none' | 'draw';
@@ -26,6 +26,7 @@ export default function CreateVideoPost() {
   const insets = useSafeAreaInsets();
   const { data: feed } = useGetFeed();
   const createPost = useCreatePost();
+  const uploadMedia = useUploadMedia();
 
   const [pickState, setPickState] = useState<'picking' | 'picked' | 'cancelled'>('picking');
   const [uri, setUri] = useState<string | null>(null);
@@ -100,14 +101,22 @@ export default function CreateVideoPost() {
     if (!uri) return;
     const authorId = feed?.viewer.id ?? 1;
     setPosting(true);
-    createPost.mutate(
-      // Same caveat as the image editor: mediaUrl is the local picked file —
-      // no upload endpoint exists yet, and filters/draw/text here are
-      // preview-only, not baked into the file. See PostEditor.tsx.
-      { data: { authorId, type: 'video', mediaUrl: uri, caption: caption.trim() || undefined } },
+
+    const finish = (mediaUrl: string) => {
+      createPost.mutate(
+        { data: { authorId, type: 'video', mediaUrl, caption: caption.trim() || undefined } },
+        { onSuccess: () => router.replace('/(tabs)'), onError: () => setPosting(false) },
+      );
+    };
+
+    const filename = uri.split('/').pop() || `clip-${Date.now()}.mp4`;
+    uploadMedia.mutate(
+      { data: { file: { uri, name: filename, type: 'video/mp4' } as unknown as Blob } },
       {
-        onSuccess: () => router.replace('/(tabs)'),
-        onError: () => setPosting(false),
+        onSuccess: (res) => finish(res.url),
+        // Upload endpoint unreachable — fall back to local URI so posting
+        // still works on this device.
+        onError: () => finish(uri),
       },
     );
   };

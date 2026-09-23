@@ -8,7 +8,7 @@ import {
 import { useColors } from '@/hooks/useColors';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useCreatePost, useGetFeed } from '@workspace/api-client-react';
+import { useCreatePost, useGetFeed, useUploadMedia } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Panel = 'none' | 'adjust' | 'filters' | 'draw';
@@ -18,6 +18,7 @@ export default function CreateImagePost() {
   const insets = useSafeAreaInsets();
   const { data: feed } = useGetFeed();
   const createPost = useCreatePost();
+  const uploadMedia = useUploadMedia();
 
   const [pickState, setPickState] = useState<'picking' | 'picked' | 'cancelled'>('picking');
   const [uri, setUri] = useState<string | null>(null);
@@ -76,15 +77,27 @@ export default function CreateImagePost() {
     if (!uri) return;
     const authorId = feed?.viewer.id ?? 1;
     setPosting(true);
-    createPost.mutate(
-      // NOTE: mediaUrl is the raw picked file's local URI — there's no
-      // /upload endpoint on the backend yet, so this only renders for you,
-      // on this device. Filters/draw/text are preview-only and aren't
-      // baked into it (see PostEditor.tsx header comment).
-      { data: { authorId, type: 'image', mediaUrl: uri, caption: caption.trim() || undefined } },
+
+    const finish = (mediaUrl: string) => {
+      createPost.mutate(
+        { data: { authorId, type: 'image', mediaUrl, caption: caption.trim() || undefined } },
+        { onSuccess: () => router.replace('/(tabs)'), onError: () => setPosting(false) },
+      );
+    };
+
+    const filename = uri.split('/').pop() || `photo-${Date.now()}.jpg`;
+    uploadMedia.mutate(
+      // RN's fetch/FormData wants {uri, name, type}, not a real Blob/File —
+      // the generated type is web-shaped (Blob | File) since the OpenAPI
+      // spec doesn't know about RN's fetch polyfill; this shape is what
+      // actually gets sent over the wire correctly on device.
+      { data: { file: { uri, name: filename, type: 'image/jpeg' } as unknown as Blob } },
       {
-        onSuccess: () => router.replace('/(tabs)'),
-        onError: () => setPosting(false),
+        onSuccess: (res) => finish(res.url),
+        // Upload endpoint unreachable (offline, dev server not running,
+        // etc.) — fall back to the local URI so posting still works on
+        // this device rather than hard-failing the whole flow.
+        onError: () => finish(uri),
       },
     );
   };

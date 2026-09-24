@@ -19,7 +19,7 @@ const colors = {
     secondary: '#F2F2F7',
     secondaryForeground: '#000000',
     muted: '#F2F2F7',
-    mutedForeground: '#8E8E93',
+    mutedForeground: '#63636A',
     accent: '#007AFF',
     accentForeground: '#FFFFFF',
     like: '#FF3B30',

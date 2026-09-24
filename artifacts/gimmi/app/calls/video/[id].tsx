@@ -57,7 +57,7 @@ export default function VideoCall() {
       <View style={styles.videoBg}>
         <Avatar author={person} size={96} />
         <Text style={styles.waitingName}>{person?.displayName ?? `Conversation ${id}`}</Text>
-        <Text style={styles.waitingLabel}>Waiting to connect…</Text>
+        <Text style={styles.waitingLabel}>Call preview · Not connected</Text>
       </View>
 
       <View style={[styles.localPip, { top: insets.top + 16 }]}>
@@ -111,7 +111,7 @@ export default function VideoCall() {
             <Text style={styles.controlLabel}>End</Text>
           </View>
         </View>
-        <Text style={styles.timer}>{formatDuration(seconds)}</Text>
+        <Text style={styles.timer}>Preview {formatDuration(seconds)}</Text>
       </View>
     </View>
   );

@@ -56,7 +56,7 @@ export default function Discover() {
         <View style={{ paddingHorizontal: 16 }}>
           {communities.length > 0 && (
             <View style={{ marginBottom: 32 }}>
-              <SectionLabel action="See all">Communities</SectionLabel>
+              <SectionLabel>Communities</SectionLabel>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 }}>
                 {communities.map((c) => (
                   <Pressable key={c.id} style={[styles.communityCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push(`/community/${c.id}`)}>
@@ -73,7 +73,7 @@ export default function Discover() {
 
           {data.people.length > 0 && (
             <View style={{ marginBottom: 32 }}>
-              <SectionLabel action="See all">People</SectionLabel>
+              <SectionLabel>People</SectionLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 16 }} style={{ marginHorizontal: -16, paddingHorizontal: 16 }}>
                 {data.people.map((p) => (
                   <Pressable key={p.id} style={styles.personCard} onPress={() => router.push(`/profile/${p.id}`)}>
@@ -87,7 +87,7 @@ export default function Discover() {
           )}
           
           <View style={{ marginBottom: 32 }}>
-            <SectionLabel action="See all">Topics</SectionLabel>
+            <SectionLabel>Topics</SectionLabel>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {data.topics.map((t, i) => (
                 <View key={i} style={[styles.topicPill, { backgroundColor: colors.secondary }]}>

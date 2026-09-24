@@ -1,1 +1,3 @@
 - [Gimmi design source hierarchy](gimmi-design-source-hierarchy.md) — attached PNG controls composition, MD controls behavior, and Apple HIG controls native conventions.
+- [Expo dependency resolution](expo-dependency-resolution.md) — pnpm peer re-resolution can expose undeclared Babel dependencies in Worklets despite passing typechecks.
+- [Orval Zod exports](orval-zod-exports.md) — split Zod output can generate duplicate root exports if TypeScript schemas are emitted alongside validators.

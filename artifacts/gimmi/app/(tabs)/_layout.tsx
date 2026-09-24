@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, PanResponder, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import React from 'react';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Icon, IconName } from '@/components/GimmiUI';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabsProps = React.ComponentProps<typeof Tabs>;
@@ -19,100 +18,13 @@ const fallbackIcons: Record<string, IconName> = {
   profile: 'user',
 };
 
-function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
+function SolidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const outerInset = 10;
   const barWidth = width - outerInset * 2;
   const itemWidth = barWidth / state.routes.length;
-  const translateX = useRef(new Animated.Value(state.index * itemWidth)).current;
-  const liquidProgress = useRef(new Animated.Value(0)).current;
-  const dragStart = useRef(state.index * itemWidth);
-
-  useEffect(() => {
-    Animated.spring(translateX, {
-      toValue: state.index * itemWidth,
-      damping: 18,
-      stiffness: 210,
-      mass: 0.72,
-      useNativeDriver: false,
-    }).start();
-  }, [itemWidth, state.index, translateX]);
-
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, gesture) => (
-      Math.abs(gesture.dx) > 4 && Math.abs(gesture.dx) > Math.abs(gesture.dy)
-    ),
-    onPanResponderGrant: () => {
-      translateX.stopAnimation((value) => {
-        dragStart.current = value;
-      });
-      liquidProgress.stopAnimation();
-      Animated.timing(liquidProgress, {
-        toValue: 1,
-        duration: 110,
-        useNativeDriver: false,
-      }).start();
-    },
-    onPanResponderMove: (_, gesture) => {
-      const maximum = itemWidth * (state.routes.length - 1);
-      translateX.setValue(Math.max(0, Math.min(maximum, dragStart.current + gesture.dx)));
-    },
-    onPanResponderRelease: (_, gesture) => {
-      const targetIndex = Math.max(
-        0,
-        Math.min(
-          state.routes.length - 1,
-          Math.round((dragStart.current + gesture.dx) / itemWidth),
-        ),
-      );
-      const targetRoute = state.routes[targetIndex];
-
-      Animated.spring(translateX, {
-        toValue: targetIndex * itemWidth,
-        damping: 18,
-        stiffness: 210,
-        mass: 0.72,
-        useNativeDriver: false,
-      }).start();
-      Animated.sequence([
-        Animated.delay(220),
-        Animated.timing(liquidProgress, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: false,
-        }),
-      ]).start();
-
-      if (targetIndex !== state.index) {
-        const event = navigation.emit({
-          type: 'tabPress',
-          target: targetRoute.key,
-          canPreventDefault: true,
-        });
-        if (!event.defaultPrevented) navigation.navigate(targetRoute.name, targetRoute.params);
-      }
-    },
-    onPanResponderTerminate: () => {
-      Animated.spring(translateX, {
-        toValue: state.index * itemWidth,
-        damping: 18,
-        stiffness: 210,
-        mass: 0.72,
-        useNativeDriver: false,
-      }).start();
-      Animated.sequence([
-        Animated.delay(220),
-        Animated.timing(liquidProgress, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    },
-  }), [itemWidth, liquidProgress, navigation, state.index, state.routes, translateX]);
 
   return (
     <View
@@ -122,66 +34,7 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
         { bottom: Math.max(insets.bottom, Platform.OS === 'web' ? 18 : 8) },
       ]}
     >
-      <BlurView
-        intensity={88}
-        tint="light"
-        style={[styles.fallbackBar, { width: barWidth }]}
-        {...panResponder.panHandlers}
-      >
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.selectionPill,
-            {
-              width: itemWidth - 8,
-              transform: [
-                { translateX },
-                {
-                  scaleX: liquidProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 1.08],
-                  }),
-                },
-                {
-                  scaleY: liquidProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [1, 0.96],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              styles.selectionResting,
-              {
-                backgroundColor: `${colors.primary}3D`,
-                borderColor: `${colors.primary}66`,
-                opacity: liquidProgress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1, 0],
-                }),
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                opacity: liquidProgress,
-              },
-            ]}
-          >
-            <BlurView
-              intensity={100}
-              tint="light"
-              style={[StyleSheet.absoluteFill, styles.selectionGlass]}
-            />
-            <View style={styles.selectionHighlight} />
-          </Animated.View>
-        </Animated.View>
+      <View style={[styles.fallbackBar, { width: barWidth, backgroundColor: colors.background }]}>
         {state.routes.map((route, index) => {
           const selected = state.index === index;
           const label = route.name === 'index'
@@ -203,18 +56,20 @@ function LiquidFallbackTabBar({ state, navigation }: CustomTabBarProps) {
                 if (!selected && !event.defaultPrevented) navigation.navigate(route.name, route.params);
               }}
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
-              style={[styles.fallbackItem, { width: itemWidth }]}
+              style={({ pressed }) => [styles.fallbackItem, { width: itemWidth, opacity: pressed ? 0.65 : 1 }]}
             >
-              <Icon
-                name={fallbackIcons[route.name] || 'home'}
-                size={24}
-                color={selected ? colors.primary : colors.mutedForeground}
-                strokeWidth={selected ? 2.35 : 1.8}
-              />
+              <View style={[styles.fallbackItemInner, selected && { backgroundColor: colors.secondary }]}>
+                <Icon
+                  name={fallbackIcons[route.name] || 'home'}
+                  size={24}
+                  color={selected ? colors.primary : colors.mutedForeground}
+                  strokeWidth={selected ? 2.35 : 1.8}
+                />
+              </View>
             </Pressable>
           );
         })}
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -257,7 +112,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <LiquidFallbackTabBar {...props} />}
+      tabBar={(props) => <SolidFallbackTabBar {...props} />}
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
@@ -265,8 +120,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
           elevation: 0,
           ...(isWeb ? { height: 56, paddingBottom: 2 } : {}),
         },
@@ -328,46 +182,21 @@ const styles = StyleSheet.create({
   },
   fallbackBar: {
     height: 56,
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
     overflow: 'hidden',
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderColor: 'rgba(255,255,255,0.55)',
-  },
-  selectionPill: {
-    position: 'absolute',
-    left: 4,
-    top: 4,
-    bottom: 4,
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.62)',
-    overflow: 'hidden',
-    zIndex: 1,
-  },
-  selectionResting: {
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  selectionGlass: {
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-  selectionHighlight: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.78)',
+    elevation: 2,
   },
   fallbackItem: {
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 3,
+  },
+  fallbackItemInner: {
+    width: 52,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
   },
 });

@@ -440,6 +440,60 @@ export const GetConversationMessagesResponse = zod.object({
 
 
 /**
+ * @summary List outgoing call-preview attempts
+ */
+export const getCallLogQueryViewerIdDefault = 1;
+
+export const GetCallLogQueryParams = zod.object({
+  "viewerId": zod.coerce.number().int().default(getCallLogQueryViewerIdDefault)
+})
+
+export const GetCallLogResponse = zod.object({
+  "attempts": zod.array(zod.object({
+  "id": zod.number().int(),
+  "recipient": zod.object({
+  "id": zod.number().int(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatar": zod.string(),
+  "communityName": zod.string(),
+  "communityColor": zod.string(),
+  "isLive": zod.boolean(),
+  "isPremium": zod.boolean().optional()
+}),
+  "type": zod.enum(['voice', 'video']),
+  "startedAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Log an outgoing voice or video preview attempt
+ */
+export const LogCallAttemptBody = zod.object({
+  "viewerId": zod.number().int(),
+  "recipientId": zod.number().int(),
+  "type": zod.enum(['voice', 'video'])
+})
+
+export const LogCallAttemptResponse = zod.object({
+  "id": zod.number().int(),
+  "recipient": zod.object({
+  "id": zod.number().int(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatar": zod.string(),
+  "communityName": zod.string(),
+  "communityColor": zod.string(),
+  "isLive": zod.boolean(),
+  "isPremium": zod.boolean().optional()
+}),
+  "type": zod.enum(['voice', 'video']),
+  "startedAt": zod.string()
+})
+
+
+/**
  * @summary Get a user profile
  */
 export const GetProfileParams = zod.object({

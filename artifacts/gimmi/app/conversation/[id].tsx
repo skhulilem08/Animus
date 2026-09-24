@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Text, Screen, Header, IconButton, Avatar, LoadingState, ErrorState, relativeTime } from '@/components/GimmiUI';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useGetConversationMessages, useSendMessage, useGetFeed, Message } from '@workspace/api-client-react';
+import { useGetConversationMessages, useSendMessage, useLogCallAttempt, useGetFeed, Message } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConversationPerson } from '@/hooks/useConversationPerson';
 
@@ -21,6 +21,7 @@ export default function Conversation() {
   const person = useConversationPerson(conversationId);
   const { data, isLoading, isError, refetch } = useGetConversationMessages(conversationId, { viewerId });
   const sendMessage = useSendMessage();
+  const logCallAttempt = useLogCallAttempt();
 
   const messages = data?.messages ?? [];
   const inverted = [...messages].reverse();
@@ -40,6 +41,24 @@ export default function Conversation() {
     );
   };
 
+  const startCallPreview = (type: 'voice' | 'video') => {
+    if (!viewerId || !person) {
+      Alert.alert('Not ready yet', 'Wait for the conversation to load before starting a call preview.');
+      return;
+    }
+    if (logCallAttempt.isPending) return;
+    logCallAttempt.mutate(
+      { data: { viewerId, recipientId: person.id, type } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['/api/call-log'] });
+          router.push(`/calls/${type}/${id}`);
+        },
+        onError: () => Alert.alert('Could not start preview', 'Your call attempt could not be logged. Please try again.'),
+      },
+    );
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Header
@@ -47,8 +66,8 @@ export default function Conversation() {
         title={person?.displayName ?? 'Chat'}
         right={
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <IconButton name="phone" onPress={() => router.push(`/calls/voice/${id}`)} label="Voice call" />
-            <IconButton name="video" onPress={() => router.push(`/calls/video/${id}`)} label="Video call" />
+            <IconButton name="phone" onPress={() => startCallPreview('voice')} label="Voice call preview" />
+            <IconButton name="video" onPress={() => startCallPreview('video')} label="Video call preview" />
           </View>
         }
       />

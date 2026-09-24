@@ -8,7 +8,6 @@ import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { BlurView } from 'expo-blur';
 
 export default function HomeFeed() {
   const { data, isLoading, isError, refetch } = useGetFeed();
@@ -68,20 +67,9 @@ export default function HomeFeed() {
     }
 
     return (
-      <BlurView
-        intensity={82}
-        tint="light"
-        style={[
-          headerStyle,
-          {
-            backgroundColor: 'rgba(255,255,255,0.42)',
-            borderBottomColor: colors.border,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-          },
-        ]}
-      >
+      <View style={[headerStyle, { backgroundColor: colors.background, borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
         <HeaderContent />
-      </BlurView>
+      </View>
     );
   };
 

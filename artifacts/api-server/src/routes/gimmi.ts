@@ -8,6 +8,9 @@ import {
   GetDiscoverResponse,
   GetFeedResponse,
   GetMessagesResponse,
+  GetCallLogResponse,
+  LogCallAttemptBody,
+  LogCallAttemptResponse,
   GetNotificationsResponse,
   GetPostResponse,
   GetPostCommentsResponse,
@@ -71,6 +74,15 @@ function toMessage(row: Row) {
     body: asString(row.body),
     createdAt: new Date(String(row.created_at)).toISOString(),
     status: asString(row.status) as "sent" | "delivered" | "read",
+  };
+}
+
+function toCallAttempt(row: Row) {
+  return {
+    id: asNumber(row.attempt_id),
+    recipient: toAuthor(row),
+    type: asString(row.type) as "voice" | "video",
+    startedAt: new Date(String(row.started_at)).toISOString(),
   };
 }
 
@@ -141,7 +153,7 @@ const postSelect = (viewerId: number) => sql`
 `;
 
 router.get("/feed", async (req, res) => {
-  const requestedViewerId = numberParam(req.query.viewerId, 0);
+  const requestedViewerId = numberParam(req.query.viewerId, 1);
   try {
     const viewerResult = await db.execute(sql`
       SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
@@ -449,6 +461,58 @@ router.post("/posts/:postId/like", async (req, res) => {
   } catch (error) {
     req.log.error({ err: error }, "Failed to toggle post like");
     res.status(400).json({ message: "Unable to update like" });
+  }
+});
+
+router.get("/call-log", async (req, res) => {
+  const viewerId = numberParam(req.query.viewerId, 1);
+  try {
+    const result = await db.execute(sql`
+      SELECT a.id AS attempt_id, a.type, a.started_at,
+        person.id, person.display_name, person.username, person.avatar,
+        person.is_live, person.is_premium,
+        c.name AS community_name, c.color AS community_color
+      FROM call_attempts a
+      JOIN users person ON person.id = a.recipient_id
+      JOIN communities c ON c.id = person.community_id
+      WHERE a.viewer_id = ${viewerId}
+      ORDER BY a.started_at DESC, a.id DESC
+      LIMIT 50
+    `);
+    res.json(GetCallLogResponse.parse({
+      attempts: (result.rows as Row[]).map(toCallAttempt),
+    }));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to load call log");
+    res.status(500).json({ message: "Unable to load call log" });
+  }
+});
+
+router.post("/call-log", async (req, res) => {
+  try {
+    const body = LogCallAttemptBody.parse(req.body);
+    if (body.viewerId === body.recipientId || body.viewerId < 1 || body.recipientId < 1) {
+      res.status(400).json({ message: "A call preview requires a different person" });
+      return;
+    }
+    const result = await db.execute(sql`
+      WITH added AS (
+        INSERT INTO call_attempts (viewer_id, recipient_id, type)
+        VALUES (${body.viewerId}, ${body.recipientId}, ${body.type})
+        RETURNING id, recipient_id, type, started_at
+      )
+      SELECT a.id AS attempt_id, a.type, a.started_at,
+        person.id, person.display_name, person.username, person.avatar,
+        person.is_live, person.is_premium,
+        c.name AS community_name, c.color AS community_color
+      FROM added a
+      JOIN users person ON person.id = a.recipient_id
+      JOIN communities c ON c.id = person.community_id
+    `);
+    res.status(201).json(LogCallAttemptResponse.parse(toCallAttempt((result.rows as Row[])[0] ?? {})));
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to log call preview");
+    res.status(400).json({ message: "Unable to start call preview" });
   }
 });
 

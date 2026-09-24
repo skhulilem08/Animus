@@ -177,6 +177,39 @@ export interface MessagesResponse {
   conversations: Conversation[];
 }
 
+export type CallAttemptType = typeof CallAttemptType[keyof typeof CallAttemptType];
+
+
+export const CallAttemptType = {
+  voice: 'voice',
+  video: 'video',
+} as const;
+
+export interface CallAttempt {
+  id: number;
+  recipient: Author;
+  type: CallAttemptType;
+  startedAt: string;
+}
+
+export interface CallLogResponse {
+  attempts: CallAttempt[];
+}
+
+export type LogCallAttemptRequestType = typeof LogCallAttemptRequestType[keyof typeof LogCallAttemptRequestType];
+
+
+export const LogCallAttemptRequestType = {
+  voice: 'voice',
+  video: 'video',
+} as const;
+
+export interface LogCallAttemptRequest {
+  viewerId: number;
+  recipientId: number;
+  type: LogCallAttemptRequestType;
+}
+
 export interface SendMessageRequest {
   senderId: number;
   recipientId: number;
@@ -249,6 +282,10 @@ viewerId?: number;
 };
 
 export type GetConversationMessagesParams = {
+viewerId?: number;
+};
+
+export type GetCallLogParams = {
 viewerId?: number;
 };
 

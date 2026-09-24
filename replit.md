@@ -46,6 +46,12 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 ## User preferences
 
 - The user wants Gimmi to follow Apple HIG and use Iconoir icons.
+- Use [Apple Design Skill](https://github.com/dickwu/apple-design-skill) as the HIG review reference; if installing it for Claude Code, use `.claude/skills/apple-design/` in this project or `~/.claude/skills/apple-design/` for the user. Refer also to [Emil Kowalski's motion guidance](https://x.com/emilkowalski?s=11), [Taste Skill](https://www.tasteskill.dev/), and [Impeccable](https://impeccable.style/docs/) for restraint, hierarchy, and interaction craft.
+- Design learning references: [Apple HIG](https://developer.apple.com/design/human-interface-guidelines/) is the platform authority; use [NN/g](https://www.nngroup.com/articles/) for visual hierarchy/usability, [IxDF mobile UX](https://www.interaction-design.org/literature/topics/mobile-ux-design) for mobile patterns, [Laws of UX](https://lawsofux.com/) for interaction principles, and [W3C WAI](https://www.w3.org/WAI/fundamentals/accessibility-intro/) for accessibility review. Do not use these as generic templates or override the attached Gimmi PNG.
+- Refine Messages before redesigning other screens: use a minimal, premium iOS feel with pill controls, subtle non-travelling selection fades, and borderless top/bottom navigation. Reuse shared TSX components and HIG-sized text; avoid decorative controls without actions.
+- The 12 sources reviewed for the Messages page and their applied takeaways are in `artifacts/gimmi/docs/messages-design-references.md`.
+- Use native Liquid Glass and purposeful motion on supported iOS, consistent with HIG. On unsupported iOS versions (including iOS 7–18), Android, and web, use solid surfaces instead of simulated glass or blur; implement native fallbacks with React Native styles and web fallbacks with CSS.
+- On both own and other-user profile pages, place the avatar on the left and identity, community, and follower details on the right; keep action buttons below the summary.
 
 ## Gotchas
 

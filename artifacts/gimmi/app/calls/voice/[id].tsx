@@ -45,7 +45,8 @@ export default function VoiceCall() {
       <View style={styles.top}>
         <Avatar author={person} size={120} />
         <Text style={styles.name}>{person?.displayName ?? `Conversation ${id}`}</Text>
-        <Text style={styles.status}>{formatDuration(seconds)}</Text>
+        <Text style={styles.status}>Call preview · {formatDuration(seconds)}</Text>
+        <Text style={styles.caveat}>Not connected to the other person</Text>
       </View>
 
       <View style={styles.controls}>
@@ -75,8 +76,9 @@ export default function VoiceCall() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between' },
   top: { alignItems: 'center', marginTop: 80 },
-  name: { fontSize: 32, fontWeight: '700', color: '#fff', marginTop: 24 },
+  name: { fontSize: 24, fontWeight: '600', color: '#fff', marginTop: 24 },
   status: { fontSize: 18, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
+  caveat: { fontSize: 14, color: '#D1D1D6', marginTop: 8 },
   controls: { flexDirection: 'row', justifyContent: 'center', gap: 40, paddingBottom: 64 },
   controlBtn: { alignItems: 'center', gap: 8 },
   iconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },

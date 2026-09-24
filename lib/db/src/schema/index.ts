@@ -131,6 +131,20 @@ export const messagesTable = pgTable("messages", {
   status: varchar("status", { length: 12 }).notNull().default("sent"),
 });
 
+export const callAttemptsTable = pgTable("call_attempts", {
+  id: serial("id").primaryKey(),
+  viewerId: integer("viewer_id")
+    .notNull()
+    .references(() => usersTable.id),
+  recipientId: integer("recipient_id")
+    .notNull()
+    .references(() => usersTable.id),
+  type: varchar("type", { length: 5 }).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const notificationsTable = pgTable("notifications", {
   id: serial("id").primaryKey(),
   profileId: integer("profile_id")

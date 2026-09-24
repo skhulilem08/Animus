@@ -224,19 +224,24 @@ export function Button({ label, onPress, variant = 'primary', style, shape = 'sq
   );
 }
 
-export function Avatar({ author, size = 44, showLive = false }: { author?: Author | null; size?: number; showLive?: boolean }) {
+export function Avatar({ author, size = 44, showLive = false, fallback = 'image' }: { author?: Author | null; size?: number; showLive?: boolean; fallback?: 'image' | 'initials' }) {
   const colors = useColors();
   const hasUploadedAvatar = Boolean(
     author?.avatar && /^https?:\/\//i.test(author.avatar),
   );
+  const initials = author?.displayName?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '?';
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: colors.secondary }]}>
-      <Image
-        accessibilityLabel={hasUploadedAvatar ? `${author?.displayName} profile photo` : 'Default profile photo'}
-        source={hasUploadedAvatar ? { uri: author!.avatar } : defaultProfile}
-        style={{ width: size, height: size, borderRadius: size / 2 }}
-        resizeMode="cover"
-      />
+      {!hasUploadedAvatar && fallback === 'initials' ? (
+        <Text style={{ fontSize: size * 0.33, fontWeight: '600', color: colors.foreground }}>{initials}</Text>
+      ) : (
+        <Image
+          accessibilityLabel={hasUploadedAvatar ? `${author?.displayName} profile photo` : 'Default profile photo'}
+          source={hasUploadedAvatar ? { uri: author!.avatar } : defaultProfile}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+          resizeMode="cover"
+        />
+      )}
       {showLive && author?.isLive ? <View style={[styles.liveDot, { backgroundColor: colors.destructive, borderColor: colors.card }]} /> : null}
     </View>
   );
@@ -253,9 +258,9 @@ export function SectionLabel({ children, action, onPress }: { children: ReactNod
   return <View style={styles.sectionRow}><Text style={[styles.sectionLabel, { color: colors.foreground }]}>{children}</Text>{action ? <Pressable onPress={onPress}><Text style={[styles.sectionAction, { color: colors.primary }]}>{action}</Text></Pressable> : null}</View>;
 }
 
-export function SearchField({ value, onChangeText, placeholder = 'Search Gimmi' }: { value: string; onChangeText: (value: string) => void; placeholder?: string }) {
+export function SearchField({ value, onChangeText, placeholder = 'Search Gimmi', shape = 'rounded' }: { value: string; onChangeText: (value: string) => void; placeholder?: string; shape?: 'rounded' | 'pill' }) {
   const colors = useColors();
-  return <View style={[styles.search, { backgroundColor: colors.input }]}><Icon name="search" size={18} color={colors.mutedForeground} /><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.mutedForeground} style={[styles.searchInput, { color: colors.foreground }]} returnKeyType="search" /></View>;
+  return <View style={[styles.search, shape === 'pill' && styles.searchPill, { backgroundColor: colors.input }]}><Icon name="search" size={18} color={colors.mutedForeground} /><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.mutedForeground} style={[styles.searchInput, { color: colors.foreground }]} returnKeyType="search" /></View>;
 }
 
 const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -458,10 +463,11 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9999, alignSelf: 'flex-start' },
   pillText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.06 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, marginTop: 8 },
-  sectionLabel: { fontSize: 15, fontWeight: '600', letterSpacing: -0.24, textTransform: 'uppercase' },
+  sectionLabel: { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.24 },
   sectionAction: { fontSize: 14, fontWeight: '500' },
-  search: { height: 44, borderRadius: 9999, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8, marginBottom: 24 },
-  searchInput: { flex: 1, fontSize: 16, paddingVertical: 10, letterSpacing: -0.32 },
+  search: { height: 40, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, gap: 8, marginBottom: 12 },
+  searchPill: { height: 44, borderRadius: 999, paddingHorizontal: 16 },
+  searchInput: { flex: 1, fontSize: 17, paddingVertical: 8, letterSpacing: -0.3 },
   postCard: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 12 },
   postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 9 },
   authorName: { fontSize: 15, fontWeight: '600', letterSpacing: -0.24 },

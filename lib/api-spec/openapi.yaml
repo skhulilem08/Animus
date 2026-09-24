@@ -20,6 +20,8 @@ tags:
     description: Community membership
   - name: messages
     description: Private messaging
+  - name: calls
+    description: Outgoing call-preview attempts; no connected calling service yet
   - name: profiles
     description: Profile and notification data
 paths:
@@ -317,6 +319,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ConversationMessagesResponse" }
+  /call-log:
+    get:
+      operationId: getCallLog
+      tags: [calls]
+      summary: List outgoing call-preview attempts
+      parameters:
+        - in: query
+          name: viewerId
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: Most recent outgoing attempts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CallLogResponse" }
+    post:
+      operationId: logCallAttempt
+      tags: [calls]
+      summary: Log an outgoing voice or video preview attempt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LogCallAttemptRequest" }
+      responses:
+        "201":
+          description: Attempt logged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CallAttempt" }
   /profiles/{profileId}:
     get:
       operationId: getProfile
@@ -562,6 +595,32 @@ components:
         conversations:
           type: array
           items: { $ref: "#/components/schemas/Conversation" }
+    CallAttempt:
+      type: object
+      required: [id, recipient, type, startedAt]
+      properties:
+        id: { type: integer }
+        recipient: { $ref: "#/components/schemas/Author" }
+        type:
+          type: string
+          enum: [voice, video]
+        startedAt: { type: string }
+    CallLogResponse:
+      type: object
+      required: [attempts]
+      properties:
+        attempts:
+          type: array
+          items: { $ref: "#/components/schemas/CallAttempt" }
+    LogCallAttemptRequest:
+      type: object
+      required: [viewerId, recipientId, type]
+      properties:
+        viewerId: { type: integer }
+        recipientId: { type: integer }
+        type:
+          type: string
+          enum: [voice, video]
     SendMessageRequest:
       type: object
       required: [senderId, recipientId, body]

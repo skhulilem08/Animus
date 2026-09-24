@@ -646,11 +646,15 @@ router.post("/profiles/:profileId/follow", async (req, res) => {
 
 router.get("/profiles/:profileId", async (req, res) => {
   const profileId = numberParam(req.params.profileId, 1);
+  const viewerId = numberParam(req.query.viewerId, 1);
   try {
     const [userResult, postResult] = await Promise.all([
       db.execute(sql`
         SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,
-               u.follower_count, u.following_count, c.name AS community_name, c.color AS community_color
+               u.follower_count, u.following_count, c.name AS community_name, c.color AS community_color,
+               EXISTS(
+                 SELECT 1 FROM followers f WHERE f.follower_id = ${viewerId} AND f.followed_id = u.id
+               ) AS followed_by_viewer
         FROM users u JOIN communities c ON c.id = u.community_id WHERE u.id = ${profileId}
       `),
       db.execute(sql`${postSelect(profileId)} WHERE p.author_id = ${profileId} ORDER BY p.created_at DESC LIMIT 30`),
@@ -664,6 +668,7 @@ router.get("/profiles/:profileId", async (req, res) => {
       user: toAuthor(userRow),
       followerCount: asNumber(userRow.follower_count),
       followingCount: asNumber(userRow.following_count),
+      followedByViewer: asBoolean(userRow.followed_by_viewer),
       posts: (postResult.rows as Row[]).map((row) => toPost(row, profileId)),
     });
     res.json(data);

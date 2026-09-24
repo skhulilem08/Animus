@@ -51,7 +51,7 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 - Refine Messages before redesigning other screens: use a minimal, premium iOS feel with pill controls, subtle non-travelling selection fades, and borderless top/bottom navigation. Reuse shared TSX components and HIG-sized text; avoid decorative controls without actions.
 - The 12 sources reviewed for the Messages page and their applied takeaways are in `artifacts/gimmi/docs/messages-design-references.md`.
 - Use native Liquid Glass and purposeful motion on supported iOS, consistent with HIG. On unsupported iOS versions (including iOS 7–18), Android, and web, use solid surfaces instead of simulated glass or blur; implement native fallbacks with React Native styles and web fallbacks with CSS.
-- On both own and other-user profile pages, place the avatar on the left and identity, community, and follower details on the right; keep action buttons below the summary.
+- On both own and other-user profile pages, place the avatar on the left and identity, community, and follower details on the right; keep action buttons below the summary. Keep community identity in the badge while the Follow action uses the system-blue control tint from the reference.
 
 ## Gotchas
 

@@ -500,6 +500,13 @@ export const GetProfileParams = zod.object({
   "profileId": zod.coerce.number().int()
 })
 
+
+
+
+export const GetProfileQueryParams = zod.object({
+  "viewerId": zod.coerce.number().int().min(1).optional()
+})
+
 export const GetProfileResponse = zod.object({
   "user": zod.object({
   "id": zod.number().int(),
@@ -513,6 +520,7 @@ export const GetProfileResponse = zod.object({
 }),
   "followerCount": zod.number().int(),
   "followingCount": zod.number().int(),
+  "followedByViewer": zod.boolean(),
   "posts": zod.array(zod.object({
   "id": zod.number().int(),
   "author": zod.object({

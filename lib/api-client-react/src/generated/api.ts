@@ -38,6 +38,7 @@ import type {
   GetFeedParams,
   GetMessagesParams,
   GetPostParams,
+  GetProfileParams,
   HealthStatus,
   LikeRequest,
   LikeResponse,
@@ -1537,20 +1538,29 @@ export const useLogCallAttempt = <TError = ErrorType<unknown>,
       return useMutation(getLogCallAttemptMutationOptions(options));
     }
 
-export const getGetProfileUrl = (profileId: number,) => {
+export const getGetProfileUrl = (profileId: number,
+    params?: GetProfileParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/profiles/${profileId}`
+  return stringifiedParams.length > 0 ? `/api/profiles/${profileId}?${stringifiedParams}` : `/api/profiles/${profileId}`
 }
 
 /**
  * @summary Get a user profile
  */
-export const getProfile = async (profileId: number, options?: Parameters<typeof customFetch>[1]): Promise<Profile> => {
+export const getProfile = async (profileId: number,
+    params?: GetProfileParams, options?: Parameters<typeof customFetch>[1]): Promise<Profile> => {
 
-  return customFetch<Profile>(getGetProfileUrl(profileId),
+  return customFetch<Profile>(getGetProfileUrl(profileId,params),
   {
     ...options,
     method: 'GET'
@@ -1563,23 +1573,25 @@ export const getProfile = async (profileId: number, options?: Parameters<typeof 
 
 
 
-export const getGetProfileQueryKey = (profileId: number,) => {
+export const getGetProfileQueryKey = (profileId: number,
+    params?: GetProfileParams,) => {
     return [
-    `/api/profiles/${profileId}`
+    `/api/profiles/${profileId}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(profileId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(profileId: number,
+    params?: GetProfileParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetProfileQueryKey(profileId);
+  const queryKey =  queryOptions?.queryKey ?? getGetProfileQueryKey(profileId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile(profileId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile(profileId,params, { signal, ...requestOptions });
 
 
 
@@ -1597,11 +1609,12 @@ export type GetProfileQueryError = ErrorType<unknown>
  */
 
 export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(
- profileId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ profileId: number,
+    params?: GetProfileParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetProfileQueryOptions(profileId,options)
+  const queryOptions = getGetProfileQueryOptions(profileId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -44,6 +44,7 @@ import {
 import { Bookmark as BookmarkSolid, Heart as HeartSolid } from 'iconoir-react-native/solid';
 import { Post, Author, Community } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
+import systemColors from '@/constants/colors';
 import { getCommunityTheme } from '@/constants/communityThemes';
 import { openInAppBrowser } from '@/utils/openInAppBrowser';
 import { router } from 'expo-router';
@@ -196,11 +197,11 @@ export function IconButton({ name, onPress, badge, label, size = 24, color, styl
   );
 }
 
-export function Button({ label, onPress, variant = 'primary', style, shape = 'squircle' }: { label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'destructive'; style?: StyleProp<ViewStyle>; shape?: 'squircle' | 'pill' }) {
+export function Button({ label, onPress, variant = 'primary', style, shape = 'squircle', tone = 'brand' }: { label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'destructive'; style?: StyleProp<ViewStyle>; shape?: 'squircle' | 'pill'; tone?: 'brand' | 'system' }) {
   const colors = useColors();
   
-  let bg = colors.primary;
-  let textCol = colors.primaryForeground;
+  let bg = tone === 'system' ? systemColors.light.primary : colors.primary;
+  let textCol = tone === 'system' ? systemColors.light.primaryForeground : colors.primaryForeground;
   
   if (variant === 'secondary') {
     bg = colors.secondary;

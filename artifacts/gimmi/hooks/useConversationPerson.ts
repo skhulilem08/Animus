@@ -1,12 +1,13 @@
-import { useGetMessages, Author } from '@workspace/api-client-react';
+import { useGetMessages, useGetProfile, Author } from '@workspace/api-client-react';
 
 /**
  * The conversation-messages endpoint only returns raw Message rows
  * (senderId/recipientId), not participant info — so the other person's
- * name/avatar has to come from the conversations list instead, matched by
- * conversation id. Same approach used in app/profile/[id].tsx.
+ * name/avatar comes from the conversations list when available. A newly opened
+ * conversation can have no messages yet, so fall back to the recipient profile.
  */
 export function useConversationPerson(conversationId: number): Author | null {
   const { data } = useGetMessages();
-  return data?.conversations.find((c) => c.id === conversationId)?.person ?? null;
+  const { data: profile } = useGetProfile(conversationId);
+  return data?.conversations.find((c) => c.id === conversationId)?.person ?? profile?.user ?? null;
 }

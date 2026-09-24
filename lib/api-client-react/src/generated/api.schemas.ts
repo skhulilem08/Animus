@@ -220,6 +220,7 @@ export interface Profile {
   user: Author;
   followerCount: number;
   followingCount: number;
+  followedByViewer: boolean;
   posts: Post[];
 }
 
@@ -286,6 +287,13 @@ viewerId?: number;
 };
 
 export type GetCallLogParams = {
+viewerId?: number;
+};
+
+export type GetProfileParams = {
+/**
+ * @minimum 1
+ */
 viewerId?: number;
 };
 

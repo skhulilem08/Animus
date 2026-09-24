@@ -361,6 +361,11 @@ paths:
           required: true
           schema:
             type: integer
+        - in: query
+          name: viewerId
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "200":
           description: Profile
@@ -630,11 +635,12 @@ components:
         body: { type: string }
     Profile:
       type: object
-      required: [user, followerCount, followingCount, posts]
+      required: [user, followerCount, followingCount, followedByViewer, posts]
       properties:
         user: { $ref: "#/components/schemas/Author" }
         followerCount: { type: integer }
         followingCount: { type: integer }
+        followedByViewer: { type: boolean }
         posts:
           type: array
           items: { $ref: "#/components/schemas/Post" }

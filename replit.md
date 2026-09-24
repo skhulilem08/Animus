@@ -5,7 +5,7 @@ Gimmi is a community-centered native mobile app for sharing thoughts, images, cl
 ## Run & Operate
 
 - Replit managed workflows:
-  - `artifacts/animus: expo` — Expo mobile preview
+  - `artifacts/gimmi: expo` — Expo mobile preview
   - `artifacts/api-server: API Server` — Express API
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
@@ -25,11 +25,11 @@ Gimmi is a community-centered native mobile app for sharing thoughts, images, cl
 
 ## Where things live
 
-- `artifacts/animus` — Expo / React Native mobile application
+- `artifacts/gimmi` — Expo / React Native mobile application
 - `artifacts/api-server` — Express API and SQL-backed server routes
 - `lib/db/src/schema/index.ts` — PostgreSQL schema source of truth
 - `lib/api-spec/openapi.yaml` — API contract source of truth
-- `artifacts/animus/constants/colors.ts` — mobile semantic color tokens
+- `artifacts/gimmi/constants/colors.ts` — mobile semantic color tokens
 
 ## Architecture decisions
 

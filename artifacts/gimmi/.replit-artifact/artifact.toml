@@ -3,7 +3,7 @@ previewPath = "/"
 title = "Gimmi"
 description = "A community-centered social mobile app where people share text, images, and clips, discover communities, message each other, and connect across community boundaries."
 version = "1.0.0"
-id = "artifacts/animus"
+id = "artifacts/gimmi"
 router = "expo-domain"
 
 [[services]]
@@ -13,11 +13,11 @@ paths = [ "/" ]
 localPort = 21763
 
 [services.development]
-run = "pnpm --filter @workspace/animus run dev"
+run = "pnpm --filter @workspace/gimmi run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/animus", "run", "build" ]
-run = [ "pnpm", "--filter", "@workspace/animus", "run", "serve" ]
+build = [ "pnpm", "--filter", "@workspace/gimmi", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/gimmi", "run", "serve" ]
 
 [services.env]
 PORT = "21763"

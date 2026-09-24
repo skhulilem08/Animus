@@ -38,6 +38,8 @@ import {
   SunLight,
   Palette,
   HalfMoon,
+  NavArrowRight,
+  MailOut,
 } from 'iconoir-react-native';
 import { Bookmark as BookmarkSolid, Heart as HeartSolid } from 'iconoir-react-native/solid';
 import { Post, Author, Community } from '@workspace/api-client-react';
@@ -89,6 +91,8 @@ const iconMap = {
   adjust: SunLight,
   filters: Palette,
   bw: HalfMoon,
+  chevron: NavArrowRight,
+  mail: MailOut,
 } as const;
 
 export type IconName = keyof typeof iconMap;

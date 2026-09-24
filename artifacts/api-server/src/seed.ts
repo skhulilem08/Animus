@@ -1,47 +1,35 @@
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { miraculousCommunities } from "./miraculous.com.seed";
 
 export async function seedGimmi() {
   await db.transaction(async (tx) => {
-  // Primary colors follow the Chinese Miracle Box. Bright or white box colors
-  // use deeper hues so buttons and links stay legible on a white background.
+  const communityValues = sql.join(
+    miraculousCommunities.map(({ name, slug, color, memberCount, description }) =>
+      sql`(${name}, ${slug}, ${color}, ${memberCount}, ${description})`),
+    sql`, `,
+  );
   await tx.execute(sql`
-    INSERT INTO communities (name, slug, color, member_count, description) VALUES
-      ('Ladybug', 'ladybug', '#D32F2F', 12600, 'Small details, bright spots, and a little courage.'),
-      ('Cat', 'cat', '#242424', 7820, 'Independent minds, quiet rooms, and curious nights.'),
-      ('Peacock', 'peacock', '#145C91', 5820, 'Blue ideas, thoughtful display, and quiet confidence.'),
-      ('Butterfly', 'butterfly', '#823A8A', 7460, 'New perspectives, beautiful shifts, and becoming.'),
-      ('Turtle', 'turtle', '#237844', 8940, 'Move gently, notice more, and make space to grow.'),
-      ('Fox', 'fox', '#A85008', 9650, 'Clever projects, warm conversations, and good instincts.'),
-      ('Bee', 'bee', '#8A6500', 9420, 'Make something small. Make it with care.'),
-      ('Rabbit', 'rabbit', '#3277A3', 9210, 'Bright possibilities, curious minds, and time for wonder.'),
-      ('Dragon', 'dragon', '#C63431', 11200, 'Big ideas, brave experiments, and unapologetic energy.'),
-      ('Snake', 'snake', '#087778', 5370, 'Change, craft, and a calmer way to begin again.'),
-      ('Horse', 'horse', '#805231', 7130, 'Open roads, steady practice, and grounded stories.'),
-      ('Goat', 'goat', '#62656D', 6100, 'Bring your ideas to life, one sketch at a time.'),
-      ('Monkey', 'monkey', '#8E640A', 5600, 'Make room for play, surprises, and shared laughter.'),
-      ('Rooster', 'rooster', '#946C0D', 6680, 'Bright starts, bold ideas, and shared momentum.'),
-      ('Dog', 'dog', '#9D541F', 11900, 'Warmth, loyalty, and familiar faces.'),
-      ('Pig', 'pig', '#B83368', 6240, 'Kind people, soft landings, and honest joy.'),
-      ('Mouse', 'mouse', '#736575', 4590, 'Notice the small things and make space for everyone.'),
-      ('Ox', 'ox', '#284879', 10800, 'Patient work, clear thinking, and dependable community.'),
-      ('Tiger', 'tiger', '#98256F', 8840, 'Creative force, vivid expression, and fearless curiosity.')
+    INSERT INTO communities (name, slug, color, member_count, description)
+    VALUES ${communityValues}
     ON CONFLICT (slug) DO UPDATE
       SET name = EXCLUDED.name, color = EXCLUDED.color, description = EXCLUDED.description
   `);
-  await tx.execute(sql`
-    INSERT INTO users (display_name, username, avatar, community_id, is_live, is_premium, follower_count, following_count)
-    SELECT seed.display_name, seed.username, seed.avatar, c.id, seed.is_live, seed.is_premium, seed.follower_count, seed.following_count
-    FROM (VALUES
-      ('Theo Park', 'theo.p', 'TP', 'bee', true, true, 8920, 241),
-      ('Nia Sol', 'nia.sol', 'NS', 'turtle', false, false, 2180, 614),
-      ('Jon Bell', 'jonbell', 'JB', 'butterfly', true, false, 1640, 198),
-      ('Maya Chen', 'maya.c', '', 'ladybug', false, false, 4380, 326),
-      ('Noah Vale', 'noah.v', '', 'cat', false, false, 3910, 284)
-    ) AS seed(display_name, username, avatar, slug, is_live, is_premium, follower_count, following_count)
-    JOIN communities c ON c.slug = seed.slug
-    ON CONFLICT (username) DO NOTHING
-  `);
+  const seededUsers = miraculousCommunities.flatMap(({ slug, users }) =>
+    users.map((user) => ({ ...user, slug })));
+  if (seededUsers.length > 0) {
+    const userValues = sql.join(seededUsers.map(({
+      displayName, username, avatar, slug, isLive, isPremium, followerCount, followingCount,
+    // Parameters inside a standalone VALUES table need explicit types in PostgreSQL.
+    }) => sql`(${displayName}, ${username}, ${avatar}, ${slug}, ${isLive}::boolean, ${isPremium}::boolean, ${followerCount}::integer, ${followingCount}::integer)`), sql`, `);
+    await tx.execute(sql`
+      INSERT INTO users (display_name, username, avatar, community_id, is_live, is_premium, follower_count, following_count)
+      SELECT seed.display_name, seed.username, seed.avatar, c.id, seed.is_live, seed.is_premium, seed.follower_count, seed.following_count
+      FROM (VALUES ${userValues}) AS seed(display_name, username, avatar, slug, is_live, is_premium, follower_count, following_count)
+      JOIN communities c ON c.slug = seed.slug
+      ON CONFLICT (username) DO NOTHING
+    `);
+  }
   await tx.execute(sql`
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
     SELECT u.id, 'text',

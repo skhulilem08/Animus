@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Share } from 'react-native';
 import { Text } from '@/components/GimmiUI';
 import { useGetProfile } from '@workspace/api-client-react';
 import { Screen, Header, Avatar, LoadingState, ErrorState, PostCard, Button, IconButton, CommunityPill } from '@/components/GimmiUI';
@@ -15,6 +15,20 @@ export default function ProfileScreen() {
   if (!data) return <Screen><Header title="Profile" /><Text>Not found</Text></Screen>;
 
   const { user, followerCount, followingCount, posts } = data;
+
+  const handleEditProfile = () => {
+    // No PATCH /profiles/:id endpoint exists yet — being upfront beats a
+    // silent no-op. Account Information (Settings) is the closest thing,
+    // and it's read-only for the same reason.
+    Alert.alert("Can't edit yet", "Profile editing isn't available in this version of Gimmi yet.");
+  };
+
+  const handleShareProfile = () => {
+    Share.share({
+      message: `Check out ${user.displayName} (@${user.username}) on Gimmi`,
+      url: `gimmi://profile/${user.id}`,
+    }).catch(() => {});
+  };
 
   return (
     <Screen scroll={false}>
@@ -49,8 +63,8 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.actions}>
-            <Button label="Edit Profile" variant="secondary" shape="pill" style={{ flex: 1 }} />
-            <Button label="Share Profile" variant="secondary" shape="pill" style={{ flex: 1 }} />
+            <Button label="Edit Profile" variant="secondary" shape="pill" style={{ flex: 1 }} onPress={handleEditProfile} />
+            <Button label="Share Profile" variant="secondary" shape="pill" style={{ flex: 1 }} onPress={handleShareProfile} />
           </View>
         </View>
 

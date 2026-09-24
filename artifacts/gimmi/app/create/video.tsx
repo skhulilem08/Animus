@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCreatePost, useGetFeed, useUploadMedia } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 type Panel = 'none' | 'draw';
 
@@ -177,7 +178,7 @@ export default function CreateVideoPost() {
       )}
 
       <View style={[styles.toolbar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <ToolbarButton icon="filters" label="Filters" active={false} onPress={() => {}} />
+        <ToolbarButton icon="filters" label="Filters" active={false} onPress={() => Haptics.selectionAsync().catch(() => {})} />
         <ToolbarButton icon="pen-tool" label="Draw" active={drawActive} onPress={handleDraw} />
         <ToolbarButton icon="text" label="Text" active={textModalOpen} onPress={() => setTextModalOpen(true)} />
       </View>

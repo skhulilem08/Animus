@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Screen, Header, Avatar, LoadingState, ErrorState, PostCard, Button, IconButton, CommunityPill } from '@/components/GimmiUI';
 import { useGetProfile, useGetFeed, useToggleFollow, useGetMessages, FollowResponse, Conversation, Post } from '@workspace/api-client-react';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -78,7 +78,7 @@ export default function UserProfileScreen() {
       <Header
         left={<IconButton name="arrow-left" onPress={() => router.back()} />}
         title={user.username}
-        right={<IconButton name="more-horizontal" onPress={() => {}} label="More options" />}
+        right={<IconButton name="more-horizontal" onPress={() => Alert.alert('Nothing here yet', 'Profile options are not available in this version of Gimmi.')} label="More options" />}
       />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 112 }} showsVerticalScrollIndicator={false}>

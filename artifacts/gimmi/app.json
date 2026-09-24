@@ -17,6 +17,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Gimmi uses your camera for video calls and posting photos/clips.",
+          "microphonePermission": "Gimmi uses your microphone for voice and video calls."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",

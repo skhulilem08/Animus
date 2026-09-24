@@ -1,20 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { Screen, Header, IconButton, PostCard, Avatar, LoadingState, ErrorState } from '@/components/GimmiUI';
+import { Screen, Header, IconButton, PostCard, Avatar, LoadingState, ErrorState, relativeTime } from '@/components/GimmiUI';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGetPost, useGetPostComments, useGetFeed, useCreatePostComment } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-
-function relativeTime(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.max(1, Math.round(diffMs / 60000));
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.round(hours / 24)}d`;
-}
 
 export default function PostComments() {
   const { id } = useLocalSearchParams<{ id: string }>();

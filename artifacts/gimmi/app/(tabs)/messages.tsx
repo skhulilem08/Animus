@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { useGetMessages, useGetCallLog } from '@workspace/api-client-react';
 import { Screen, Icon, IconName, LoadingState, ErrorState, SearchField, Text } from '@/components/GimmiUI';
-import { SegmentedTabs } from '@/components/SegmentedTabs';
+import { UnderlineTabs } from '@/components/UnderlineTabs';
 import { TopHeader } from '@/components/TopHeader';
 import { InboxRow } from '@/components/InboxRow';
 import { router } from 'expo-router';
@@ -49,7 +49,7 @@ export default function Messages() {
     <Screen scroll={false}>
       <TopHeader title="Messages" />
       <View style={styles.controls}>
-        <SegmentedTabs
+        <UnderlineTabs
           labels={['Messages', 'Call Log']}
           selectedIndex={tab === 'messages' ? 0 : 1}
           onChange={(index) => { setTab(index === 0 ? 'messages' : 'calls'); setQuery(''); }}
@@ -77,6 +77,7 @@ export default function Messages() {
               unreadCount={item.unreadCount}
               accessibilityLabel={`Open conversation with ${item.person.displayName}`}
               onPress={() => router.push(`/conversation/${item.id}`)}
+              onProfilePress={() => router.push(`/profile/${item.person.id}`)}
             />
           )}
           contentContainerStyle={styles.list}

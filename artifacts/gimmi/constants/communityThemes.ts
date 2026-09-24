@@ -35,14 +35,24 @@ const keyFor = (input: CommunityThemeInput) => {
   return Object.keys(themes).find((key) => source.includes(key));
 };
 
+function blendWith(color: string, target: number, colorWeight: number): string {
+  const channels = [1, 3, 5].map((offset) => {
+    const channel = Number.parseInt(color.slice(offset, offset + 2), 16);
+    return Math.round(channel * colorWeight + target * (1 - colorWeight))
+      .toString(16).padStart(2, '0');
+  });
+  return `#${channels.join('')}`;
+}
+
 export function getCommunityTheme(input: CommunityThemeInput = {}): CommunityTheme {
   const key = keyFor(input);
   if (key) return themes[key];
 
+  const primary = input.color && /^#[0-9a-f]{6}$/i.test(input.color) ? input.color : '#007AFF';
   return {
-    primary: input.color || '#007AFF',
-    soft: '#E1F0FF',
-    foreground: '#1C1C1E',
+    primary,
+    soft: blendWith(primary, 255, 0.16),
+    foreground: blendWith(primary, 0, 0.52),
     onPrimary: '#FFFFFF',
   };
 }

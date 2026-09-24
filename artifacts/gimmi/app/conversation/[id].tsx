@@ -64,6 +64,7 @@ export default function Conversation() {
       <Header
         left={<IconButton name="arrow-left" onPress={() => router.back()} />}
         title={person?.displayName ?? 'Chat'}
+        onTitlePress={person ? () => router.push(`/profile/${person.id}`) : undefined}
         right={
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <IconButton name="phone" onPress={() => startCallPreview('voice')} label="Voice call preview" />

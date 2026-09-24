@@ -163,16 +163,23 @@ export function Screen({ children, scroll = true, style, useSafeArea = true }: {
   ) : <View style={contentStyle}>{children}</View>;
 }
 
-export function Header({ title, subtitle, right, left, showBorder = true, centerTitle = true }: { title: string; subtitle?: string; right?: ReactNode; left?: ReactNode; showBorder?: boolean; centerTitle?: boolean }) {
+export function Header({ title, subtitle, right, left, showBorder = true, centerTitle = true, onTitlePress }: { title: string; subtitle?: string; right?: ReactNode; left?: ReactNode; showBorder?: boolean; centerTitle?: boolean; onTitlePress?: () => void }) {
   const colors = useColors();
+  const titleContent = <>
+    <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={1}>{title}</Text>
+    {subtitle ? <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>{subtitle}</Text> : null}
+  </>;
   return (
     <View style={[styles.header, { borderBottomWidth: showBorder ? StyleSheet.hairlineWidth : 0, borderBottomColor: colors.border, paddingHorizontal: 16 }]}>
       <View style={styles.headerLeftContainer}>
         {left && <View style={styles.headerLeft}>{left}</View>}
       </View>
       <View style={{ flex: 1, alignItems: centerTitle ? 'center' : 'flex-start', justifyContent: 'center' }}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>{subtitle}</Text> : null}
+        {onTitlePress ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={`View ${title}'s profile`} onPress={onTitlePress} style={{ minHeight: 44, justifyContent: 'center', alignItems: centerTitle ? 'center' : 'flex-start' }}>
+            {titleContent}
+          </Pressable>
+        ) : titleContent}
       </View>
       <View style={styles.headerRightContainer}>
         {right && <View style={styles.headerRight}>{right}</View>}
@@ -197,7 +204,7 @@ export function IconButton({ name, onPress, badge, label, size = 24, color, styl
   );
 }
 
-export function Button({ label, onPress, variant = 'primary', style, shape = 'squircle', tone = 'brand' }: { label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'destructive'; style?: StyleProp<ViewStyle>; shape?: 'squircle' | 'pill'; tone?: 'brand' | 'system' }) {
+export function Button({ label, onPress, variant = 'primary', style, shape = 'squircle', tone = 'brand', compact = false }: { label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'destructive'; style?: StyleProp<ViewStyle>; shape?: 'squircle' | 'pill'; tone?: 'brand' | 'system'; compact?: boolean }) {
   const colors = useColors();
   
   let bg = tone === 'system' ? systemColors.light.primary : colors.primary;
@@ -219,7 +226,7 @@ export function Button({ label, onPress, variant = 'primary', style, shape = 'sq
   };
   
   return (
-    <Pressable accessibilityRole="button" onPress={handlePress} style={({ pressed }) => [styles.button, { backgroundColor: bg, borderRadius: shape === 'pill' ? 9999 : colors.radius, opacity: pressed ? 0.7 : 1 }, style]}>
+    <Pressable accessibilityRole="button" onPress={handlePress} hitSlop={compact ? { top: 4, bottom: 4 } : undefined} style={({ pressed }) => [styles.button, { backgroundColor: bg, borderRadius: shape === 'pill' ? 9999 : colors.radius, minHeight: compact ? 36 : 44, height: compact ? 36 : undefined, opacity: pressed ? 0.7 : 1 }, style]}>
       <Text style={[styles.buttonText, { color: textCol }]}>{label}</Text>
     </Pressable>
   );
@@ -248,10 +255,10 @@ export function Avatar({ author, size = 44, showLive = false, fallback = 'image'
   );
 }
 
-export function CommunityPill({ community, name, color }: { community?: Community; name?: string; color?: string }) {
+export function CommunityPill({ community, name, color, maxWidth }: { community?: Community; name?: string; color?: string; maxWidth?: number }) {
   const colors = useColors();
   const theme = getCommunityTheme({ name: name || community?.name, slug: community?.slug, color: color || community?.color });
-  return <View style={[styles.pill, { backgroundColor: theme.soft }]}><Text style={[styles.pillText, { color: theme.foreground }]}>{name || community?.name || 'Community'}</Text></View>;
+  return <View style={[styles.pill, { backgroundColor: theme.soft, maxWidth }]}><Text numberOfLines={maxWidth ? 2 : undefined} style={[styles.pillText, { color: theme.foreground, textAlign: maxWidth ? 'center' : 'left' }]}>{name || community?.name || 'Community'}</Text></View>;
 }
 
 export function SectionLabel({ children, action, onPress }: { children: ReactNode; action?: string; onPress?: () => void }) {

@@ -3,20 +3,21 @@ import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Pressable 
 import { Text, Screen, Header, IconButton, Button, CommunityPill, Icon } from '@/components/GimmiUI';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { useCreatePost } from '@workspace/api-client-react';
+import { useCreatePost, useGetFeed } from '@workspace/api-client-react';
 import { getCommunityTheme } from '@/constants/communityThemes';
 
 export default function CreateTextPost() {
   const colors = useColors();
   const [text, setText] = useState('');
   const createPost = useCreatePost();
-  
-  const theme = getCommunityTheme({ name: 'Ladybug Community' });
+  const { data: feed } = useGetFeed();
+  const theme = getCommunityTheme({ color: feed?.viewer.communityColor });
+  const communityName = feed?.viewer.communityName ?? 'Your community';
 
   const handlePost = () => {
-    if (!text.trim()) return;
+    if (!text.trim() || !feed?.viewer.id) return;
     createPost.mutate({
-      data: { authorId: 1, type: 'text', text: text.trim() }
+      data: { authorId: feed.viewer.id, type: 'text', text: text.trim() }
     }, {
       onSuccess: () => {
         router.back();
@@ -38,10 +39,7 @@ export default function CreateTextPost() {
       
       <View style={styles.communitySelector}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: theme.soft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 }}>
-          <Text style={{ color: theme.foreground, fontWeight: '600', fontSize: 13 }}>Ladybug Community</Text>
-          <View style={{ transform: [{ rotate: '180deg' }] }}>
-            <Icon name="arrow-up" size={14} color={theme.foreground} />
-          </View>
+          <Text style={{ color: theme.foreground, fontWeight: '600', fontSize: 13 }}>{communityName}</Text>
         </View>
       </View>
 

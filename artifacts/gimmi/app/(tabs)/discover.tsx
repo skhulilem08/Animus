@@ -13,14 +13,7 @@ export default function Discover() {
 
   const TABS = ['Communities', 'People', 'Live Now', 'Topics'];
   
-  // Sort communities to prioritize Ladybug and Cat
-  const communities = [...(data?.communities || [])].sort((a, b) => {
-    if (a.name === 'Ladybug Community') return -1;
-    if (b.name === 'Ladybug Community') return 1;
-    if (a.name === 'Cat Community') return -1;
-    if (b.name === 'Cat Community') return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const communities = data?.communities ?? [];
 
   if (isLoading) return <Screen><Header title="Discover" showBorder={false} /><View style={{ paddingHorizontal: 16 }}><SearchField value={query} onChangeText={setQuery} /></View><LoadingState label="Searching..." /></Screen>;
   if (isError) return <Screen><Header title="Discover" showBorder={false} /><View style={{ paddingHorizontal: 16 }}><SearchField value={query} onChangeText={setQuery} /></View><ErrorState onRetry={refetch} /></Screen>;

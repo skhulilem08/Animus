@@ -268,7 +268,7 @@ router.get("/discover", async (req, res) => {
             ELSE 2
           END,
           name ASC
-        LIMIT 12
+        LIMIT 50
       `),
       db.execute(sql`
         SELECT u.id, u.display_name, u.username, u.avatar, u.is_live, u.is_premium,

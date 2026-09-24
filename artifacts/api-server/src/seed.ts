@@ -3,78 +3,39 @@ import { db } from "@workspace/db";
 
 export async function seedGimmi() {
   await db.transaction(async (tx) => {
-  // Development correction: remove the retired Blue Hour fixture and every
-  // dependent record so rerunning the seed cannot leave it discoverable.
-  await tx.execute(sql`
-    DELETE FROM comments
-    WHERE author_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-       OR post_id IN (SELECT p.id FROM posts p JOIN users u ON u.id = p.author_id
-                      WHERE u.community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM likes
-    WHERE user_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-       OR post_id IN (SELECT p.id FROM posts p JOIN users u ON u.id = p.author_id
-                      WHERE u.community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM notifications
-    WHERE profile_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM messages
-    WHERE sender_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-       OR recipient_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM followers
-    WHERE follower_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-       OR followed_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM community_memberships
-    WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour')
-       OR user_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM posts
-    WHERE author_id IN (SELECT id FROM users WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour'))
-  `);
-  await tx.execute(sql`
-    DELETE FROM users
-    WHERE community_id = (SELECT id FROM communities WHERE slug = 'blue-hour')
-  `);
-  await tx.execute(sql`DELETE FROM communities WHERE slug = 'blue-hour'`);
+  // Primary colors follow the Chinese Miracle Box. Bright or white box colors
+  // use deeper hues so buttons and links stay legible on a white background.
   await tx.execute(sql`
     INSERT INTO communities (name, slug, color, member_count, description) VALUES
-      ('Saffron Club', 'saffron-club', '#D78A24', 9420, 'Make something small. Make it with care.'),
-      ('Moss & Stone', 'moss-and-stone', '#6B8068', 7310, 'A slower corner for field notes and outdoor rituals.'),
-      ('Night Shift', 'night-shift', '#7656B8', 5180, 'For people who come alive after the city goes quiet.'),
-      ('Ladybug Community', 'ladybug', '#FF3B30', 12600, 'Small details, bright spots, and a little courage.'),
-      ('Turtle', 'turtle', '#34C759', 8940, 'Move gently, notice more, and make space to grow.'),
-      ('Cat Community', 'cat', '#18251E', 7820, 'Independent minds, quiet rooms, and curious nights.'),
-      ('Dragon', 'dragon', '#FF453A', 11200, 'Big ideas, brave experiments, and unapologetic energy.'),
-      ('Fox', 'fox', '#FF9500', 9650, 'Clever projects, warm conversations, and good instincts.'),
-      ('Pig', 'pig', '#FF2D55', 6240, 'Kind people, soft landings, and honest joy.'),
-      ('Horse', 'horse', '#8E5A3C', 7130, 'Open roads, steady practice, and grounded stories.'),
-      ('Ox', 'ox', '#007AFF', 10800, 'Patient work, clear thinking, and dependable community.'),
-      ('Tiger', 'tiger', '#AF52DE', 8840, 'Creative force, vivid expression, and fearless curiosity.'),
-      ('Snake', 'snake', '#14B8A6', 5370, 'Change, craft, and a calmer way to begin again.'),
-      ('Rooster', 'rooster', '#D70015', 6680, 'Early starts, fiery ambition, and shared momentum.'),
-      ('Ghost', 'ghost', '#1C1C1E', 4590, 'The strange, the quiet, and the stories between worlds.'),
-      ('Bunny', 'bunny', '#64D2FF', 9210, 'Baby-blue optimism, gentle rituals, and bright mornings.'),
-      ('Dog', 'dog', '#C56A2D', 11900, 'Rusty-orange warmth, loyalty, and familiar faces.'),
-      ('Butterfly', 'butterfly', '#BF5AF2', 7460, 'New perspectives, beautiful shifts, and becoming.'),
-      ('Peacock', 'peacock', '#0A3D62', 5820, 'Navy calm, thoughtful display, and quiet confidence.')
-    ON CONFLICT (slug) DO NOTHING
+      ('Ladybug', 'ladybug', '#D32F2F', 12600, 'Small details, bright spots, and a little courage.'),
+      ('Cat', 'cat', '#242424', 7820, 'Independent minds, quiet rooms, and curious nights.'),
+      ('Peacock', 'peacock', '#145C91', 5820, 'Blue ideas, thoughtful display, and quiet confidence.'),
+      ('Butterfly', 'butterfly', '#823A8A', 7460, 'New perspectives, beautiful shifts, and becoming.'),
+      ('Turtle', 'turtle', '#237844', 8940, 'Move gently, notice more, and make space to grow.'),
+      ('Fox', 'fox', '#A85008', 9650, 'Clever projects, warm conversations, and good instincts.'),
+      ('Bee', 'bee', '#8A6500', 9420, 'Make something small. Make it with care.'),
+      ('Rabbit', 'rabbit', '#3277A3', 9210, 'Bright possibilities, curious minds, and time for wonder.'),
+      ('Dragon', 'dragon', '#C63431', 11200, 'Big ideas, brave experiments, and unapologetic energy.'),
+      ('Snake', 'snake', '#087778', 5370, 'Change, craft, and a calmer way to begin again.'),
+      ('Horse', 'horse', '#805231', 7130, 'Open roads, steady practice, and grounded stories.'),
+      ('Goat', 'goat', '#62656D', 6100, 'Bring your ideas to life, one sketch at a time.'),
+      ('Monkey', 'monkey', '#8E640A', 5600, 'Make room for play, surprises, and shared laughter.'),
+      ('Rooster', 'rooster', '#946C0D', 6680, 'Bright starts, bold ideas, and shared momentum.'),
+      ('Dog', 'dog', '#9D541F', 11900, 'Warmth, loyalty, and familiar faces.'),
+      ('Pig', 'pig', '#B83368', 6240, 'Kind people, soft landings, and honest joy.'),
+      ('Mouse', 'mouse', '#736575', 4590, 'Notice the small things and make space for everyone.'),
+      ('Ox', 'ox', '#284879', 10800, 'Patient work, clear thinking, and dependable community.'),
+      ('Tiger', 'tiger', '#98256F', 8840, 'Creative force, vivid expression, and fearless curiosity.')
+    ON CONFLICT (slug) DO UPDATE
+      SET name = EXCLUDED.name, color = EXCLUDED.color, description = EXCLUDED.description
   `);
   await tx.execute(sql`
     INSERT INTO users (display_name, username, avatar, community_id, is_live, is_premium, follower_count, following_count)
     SELECT seed.display_name, seed.username, seed.avatar, c.id, seed.is_live, seed.is_premium, seed.follower_count, seed.following_count
     FROM (VALUES
-      ('Theo Park', 'theo.p', 'TP', 'saffron-club', true, true, 8920, 241),
-      ('Nia Sol', 'nia.sol', 'NS', 'moss-and-stone', false, false, 2180, 614),
-      ('Jon Bell', 'jonbell', 'JB', 'night-shift', true, false, 1640, 198),
+      ('Theo Park', 'theo.p', 'TP', 'bee', true, true, 8920, 241),
+      ('Nia Sol', 'nia.sol', 'NS', 'turtle', false, false, 2180, 614),
+      ('Jon Bell', 'jonbell', 'JB', 'butterfly', true, false, 1640, 198),
       ('Maya Chen', 'maya.c', '', 'ladybug', false, false, 4380, 326),
       ('Noah Vale', 'noah.v', '', 'cat', false, false, 3910, 284)
     ) AS seed(display_name, username, avatar, slug, is_live, is_premium, follower_count, following_count)
@@ -97,7 +58,7 @@ export async function seedGimmi() {
   await tx.execute(sql`
     INSERT INTO posts (author_id, type, text, caption, media_url, link, likes, comments, shares)
     SELECT u.id, 'video', '',
-      'A quick moment from the Ladybug Community.', '', NULL, 196, 21, 9
+      'A quick moment from Ladybug.', '', NULL, 196, 21, 9
     FROM users u
     WHERE u.username = 'maya.c'
       AND NOT EXISTS (
@@ -158,8 +119,8 @@ export async function seedGimmi() {
     FROM (VALUES
       ('theo.p', 'like', 'Nia liked your post', 'A little more color for the week ahead.', false),
       ('theo.p', 'comment', 'Nia commented on your post', 'This is exactly what I needed today.', false),
-      ('theo.p', 'live', 'Theo is live now', 'Saffron Club · Studio session', true),
-      ('theo.p', 'community', 'Saffron Club has a new note', 'A new weekly prompt is ready.', true)
+      ('theo.p', 'live', 'Theo is live now', 'Bee · Studio session', true),
+      ('theo.p', 'community', 'Bee has a new note', 'A new weekly prompt is ready.', true)
     ) AS seed(username, kind, title, detail, read)
     JOIN users u ON u.username = seed.username
     WHERE NOT EXISTS (SELECT 1 FROM notifications)

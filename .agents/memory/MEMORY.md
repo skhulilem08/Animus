@@ -2,3 +2,4 @@
 - [Expo dependency resolution](expo-dependency-resolution.md) — pnpm peer re-resolution can expose undeclared Babel dependencies in Worklets despite passing typechecks.
 - [Orval Zod exports](orval-zod-exports.md) — split Zod output can generate duplicate root exports if TypeScript schemas are emitted alongside validators.
 - [Metro during API codegen](metro-codegen-window.md) — generated API files briefly disappear while Orval cleans output; distinguish that transient Metro error from a persistent failure.
+- [Gimmi canonical communities](gimmi-canonical-communities.md) — keep the startup roster strictly canonical; do not retain old-community conversion code after one-time data cleanup.
